@@ -527,6 +527,71 @@ function animateTo(ch, target){
   walkOneStep();
 }
 
+// Walk multiple legs sequentially with a pause between each leg
+function multiStepAnimateTo(ch, startPos, legs, onDone){
+  let legIdx = 0;
+  let pos = startPos;
+
+  function doNextLeg(){
+    if(legIdx >= legs.length){
+      ch.animating = false;
+      if ('stepPhase' in ch) ch.stepPhase = 0;
+      draw();
+      if(onDone) onDone();
+      return;
+    }
+
+    const leg = legs[legIdx];
+    const target = pos + leg;
+    ch.pos = target;
+
+    // Walk this leg step by step
+    const dist = Math.abs(leg);
+    const dir = leg > 0 ? 1 : -1;
+    if ('lastDir' in ch) ch.lastDir = dir;
+    let step = 0;
+
+    function walkStep(){
+      if(step >= dist){
+        ch.animPos = target;
+        if ('stepPhase' in ch) ch.stepPhase = 0;
+        pos = target;
+        legIdx++;
+        draw();
+        // Pause between legs so you can see each segment
+        setTimeout(doNextLeg, 400);
+        return;
+      }
+
+      const from = pos + step * dir;
+      const to = from + dir;
+      const t0 = performance.now();
+      const dur = 320;
+
+      function tick(now){
+        const t = Math.min((now - t0) / dur, 1);
+        const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+        ch.animPos = from + dir * ease;
+        if ('stepPhase' in ch) ch.stepPhase = Math.sin(t * Math.PI);
+        draw();
+        if(t < 1) requestAnimationFrame(tick);
+        else {
+          ch.animPos = to;
+          if ('stepPhase' in ch) ch.stepPhase = 0;
+          step++;
+          setTimeout(walkStep, 60);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    walkStep();
+  }
+
+  ch.animating = true;
+  doNextLeg();
+}
+
 function nudge(ch, dir){
   if (ch.animating) return;
   const next = ch.pos + dir;
@@ -1409,7 +1474,9 @@ const quizTopics = [
         hint:`Positive y = above ground. Positive x = right of home.`,
         viz:'both',
         vizStart:{walker:0, ellie:0},
-        vizEnd:{walker:x, ellie:y}
+        vizEnd:{walker:x, ellie:y},
+        showPegamoleAtAnswer:true,
+        pegamoleAnswerX:x, pegamoleAnswerY:y
       };
     }
   },
@@ -1467,20 +1534,26 @@ const quizTopics = [
     desc:'Follow multiple moves and find the end',
     gen(){
       const who = Math.random()>0.5 ? 'Walker' : 'Ellie';
-      const m1 = riNZ(-6,6), m2 = riNZ(-6,6), m3 = riNZ(-4,4);
-      const answer = m1 + m2 + m3;
-      function desc(n, isWalker){
-        if(isWalker) return n>0 ? `${n} steps forward` : `${-n} steps backward`;
+      const isW = who==='Walker';
+      const start = ri(-5,5);
+      const m1 = riNZ(-5,5), m2 = riNZ(-5,5), m3 = riNZ(-4,4);
+      const answer = start + m1 + m2 + m3;
+      function desc(n){
+        if(isW) return n>0 ? `${n} steps forward` : `${-n} steps backward`;
         return n>0 ? `${n} floors up` : `${-n} floors down`;
       }
-      const isW = who==='Walker';
+      const fromText = start === 0 ? 'home (0)' : fp(start);
       return {
-        prompt:`${who} starts at home. Goes ${desc(m1,isW)}, then ${desc(m2,isW)}, then ${desc(m3,isW)}. Where does ${isW?'he':'she'} end up?`,
+        prompt:`${who} starts at ${fromText}. Goes ${desc(m1)}, then ${desc(m2)}, then ${desc(m3)}. Where does ${isW?'he':'she'} end up?`,
         answer, choices:makeChoices(answer),
-        hint:`Add them up step by step: 0 ${m1>=0?'+'+m1:m1} ${m2>=0?'+'+m2:''+m2} ${m3>=0?'+'+m3:''+m3} = ?`,
+        hint:`Step by step: ${fp(start)} ${m1>=0?'+ '+m1:'− '+(-m1)} ${m2>=0?'+ '+m2:'− '+(-m2)} ${m3>=0?'+ '+m3:'− '+(-m3)} = ${fp(answer)}`,
         viz: isW?'street':'elevator',
-        vizStart: isW?{walker:0, ellie:0}:{walker:0, ellie:0},
-        vizEnd: isW?{walker:answer}:{ellie:answer}
+        vizStart: isW?{walker:start, ellie:0}:{walker:0, ellie:start},
+        vizEnd: isW?{walker:answer}:{ellie:answer},
+        multiStepJourney:true,
+        journeyWho: isW?'walker':'ellie',
+        journeyLegs:[m1, m2, m3],
+        journeyStart:start
       };
     }
   }
@@ -1636,37 +1709,47 @@ function quizAnswer(btn, value){
   document.getElementById('quizProgressFill').style.width = `${(quiz.qNum/quiz.total)*100}%`;
 
   // ---- PHASE 2: Animate to show the answer ----
-  // For find_point: Walker/Ellie go to the STUDENT's chosen point, Pegamole at correct point
+
   if(q.showPegamoleAtAnswer){
+    // find_point and above_or_below: show Pegamole at correct point
     quiz.showPegamoleAtAnswer = true;
     quiz.pegamoleAnswerX = q.pegamoleAnswerX;
     quiz.pegamoleAnswerY = q.pegamoleAnswerY;
     quiz.pegamoleCelebrating = correct;
     if(correct) quiz.pegamoleCelebrateStart = performance.now();
 
-    // Parse the student's selected coordinate string to get x,y
-    let selX = q.pegamoleAnswerX, selY = q.pegamoleAnswerY; // default to correct
-    if(isStr && typeof value === 'string'){
-      const m = value.match(/\(([^,]+),\s*([^)]+)\)/);
-      if(m){
-        selX = parseInt(m[1]);
-        selY = parseInt(m[2]);
+    // For above_or_below: Walker/Ellie go to correct point (not student choice)
+    // For find_point: Walker/Ellie go to student's chosen coordinate
+    if(q.id === 'find_point' || (isStr && typeof value === 'string' && value.match(/\(/))){
+      // Parse student's selected coordinate
+      let selX = q.pegamoleAnswerX, selY = q.pegamoleAnswerY;
+      if(typeof value === 'string'){
+        const m = value.match(/\(([^,]+),\s*([^)]+)\)/);
+        if(m){ selX = parseInt(m[1]); selY = parseInt(m[2]); }
       }
+      state.walker.pos = selX;
+      animateTo(state.walker, selX);
+      state.ellie.pos = selY;
+      animateTo(state.ellie, selY);
+    } else {
+      // above_or_below: just move to the correct point
+      state.walker.pos = q.pegamoleAnswerX;
+      animateTo(state.walker, q.pegamoleAnswerX);
+      state.ellie.pos = q.pegamoleAnswerY;
+      animateTo(state.ellie, q.pegamoleAnswerY);
     }
-    state.walker.pos = selX;
-    animateTo(state.walker, selX);
-    state.ellie.pos = selY;
-    animateTo(state.ellie, selY);
 
-    // Stop celebration after a bit
     if(correct){
-      // Keep redrawing during celebration
       function celebLoop(){
         if(quiz.pegamoleCelebrating){ draw(); requestAnimationFrame(celebLoop); }
       }
       requestAnimationFrame(celebLoop);
       setTimeout(() => { quiz.pegamoleCelebrating = false; draw(); }, 2500);
     }
+  } else if(q.multiStepJourney){
+    // Multi-step: animate the full journey leg by leg
+    const ch = q.journeyWho === 'walker' ? state.walker : state.ellie;
+    multiStepAnimateTo(ch, q.journeyStart, q.journeyLegs);
   } else if(q.vizEnd){
     if(q.vizEnd.walker !== undefined){
       state.walker.pos = q.vizEnd.walker;
