@@ -1176,7 +1176,15 @@ function draw(){
         const pmX = cx + quiz.pegamoleAnswerX * unit;
         const pmY = cy - quiz.pegamoleAnswerY * unit;
         const wph = (performance.now() / 200) % (Math.PI * 2);
-        drawPegamole(pmX, pmY, unit, wph, false);
+        // Use quiz celebration state
+        const isCelebrating = quiz.pegamoleCelebrating || false;
+        if(isCelebrating && !state.pegamole.celebrateStart) state.pegamole.celebrateStart = quiz.pegamoleCelebrateStart;
+        drawPegamole(pmX, pmY, unit, wph, isCelebrating);
+        // Pegamole's coordinate label
+        ctx.fillStyle = '#FFD700';
+        ctx.font = `bold ${Math.max(10, unit*0.3)}px Fredoka`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText(`(${fp(quiz.pegamoleAnswerX)}, ${fp(quiz.pegamoleAnswerY)})`, pmX + unit*0.3, pmY - unit*0.25);
       }
 
       if (state.walker.pos !== 0 || state.ellie.pos !== 0){
@@ -1188,12 +1196,13 @@ function draw(){
         ctx.setLineDash([]);
 
         if (!pm.active || pm.found || state.mode === 'quiz'){
-          // Don't show the red dot if Pegamole is at the answer point — Pegamole IS the dot
+          // Don't show red dot if Pegamole is showing
           if(!(state.mode === 'quiz' && quiz.showPegamoleAtAnswer)){
             ctx.fillStyle = '#ff4747';
             ctx.beginPath(); ctx.arc(wx, ey, unit*0.13, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.stroke();
           }
+          // Walker/Ellie intersection coordinate label
           ctx.fillStyle = '#fff';
           ctx.font = `bold ${Math.max(10, unit*0.27)}px Fredoka`;
           ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
@@ -1281,16 +1290,40 @@ const quizTopics = [
       const a = riNZ(-9,9);
       let b; do { b = riNZ(-9,9); } while(Math.abs(b)===Math.abs(a));
       const aAbs = Math.abs(a), bAbs = Math.abs(b);
-      const winner = aAbs > bAbs ? a : b;
-      const answer = fp(winner);
+
+      // Randomly pick which two characters are being compared
+      const matchup = ri(0,2); // 0=Walker vs Pegamole, 1=Ellie vs Pegamole, 2=Walker vs Ellie
+      let char1, char2, viz, vizStart, vizEnd;
+
+      if(matchup === 0){
+        char1 = 'Walker'; char2 = 'Pegamole';
+        viz = 'street';
+        vizStart = {walker:a, ellie:0, pegamoleX:b};
+        vizEnd = {walker:a, pegamoleX:b};
+      } else if(matchup === 1){
+        char1 = 'Ellie'; char2 = 'Pegamole';
+        viz = 'elevator';
+        vizStart = {walker:0, ellie:a};
+        vizEnd = {ellie:a};
+      } else {
+        char1 = 'Walker'; char2 = 'Ellie';
+        viz = 'both';
+        vizStart = {walker:a, ellie:b};
+        vizEnd = {walker:a, ellie:b};
+      }
+
+      const winnerPos = aAbs > bAbs ? a : b;
+      const winnerName = aAbs > bAbs ? char1 : char2;
+      const answer = winnerName;
+
       return {
-        prompt:`Is ${fp(a)} or ${fp(b)} further from home?`,
-        answer, choices:shuffle([fp(a), fp(b)]), choicesAreStrings:true,
-        hint:`Ignore the + or −. Count how many steps from zero.`,
-        viz:'street',
-        vizStart:{walker:a, ellie:0, pegamoleX:b},
-        vizEnd:{walker:winner, pegamoleX:winner === a ? b : a},
-        showPegamoleOnStreet:true, pegamoleLabel:true
+        prompt:`${char1} is at ${fp(a)}. ${char2} is at ${fp(b)}. Who's further from home?`,
+        answer, choices:shuffle([char1, char2]), choicesAreStrings:true,
+        hint:`Ignore the + or −. Count how many steps from zero. ${fp(a)} is ${aAbs} away, ${fp(b)} is ${bAbs} away.`,
+        viz,
+        vizStart,
+        vizEnd,
+        showPegamoleOnStreet: matchup === 0, pegamoleLabel:true
       };
     }
   },
@@ -1582,16 +1615,20 @@ function quizAnswer(btn, value){
   });
   if(!correct) btn.classList.add('wrong');
 
-  // Feedback
+  // Feedback — skip text for find_point, the viz shows it
   const fb = document.getElementById('quizFeedback');
-  fb.style.display = '';
-  if(correct){
-    fb.className = 'quiz-feedback right';
-    fb.textContent = '✓ Correct!';
+  if(q.showPegamoleAtAnswer){
+    fb.style.display = 'none';
   } else {
-    fb.className = 'quiz-feedback wrong';
-    const aLabel = isStr ? q.answer : fp(q.answer);
-    fb.innerHTML = `✗ The answer is <strong>${aLabel}</strong>. ${q.hint}`;
+    fb.style.display = '';
+    if(correct){
+      fb.className = 'quiz-feedback right';
+      fb.textContent = '✓ Correct!';
+    } else {
+      fb.className = 'quiz-feedback wrong';
+      const aLabel = isStr ? q.answer : fp(q.answer);
+      fb.innerHTML = `✗ The answer is <strong>${aLabel}</strong>. ${q.hint}`;
+    }
   }
 
   document.getElementById('quizNextBtn').style.display = '';
@@ -1604,6 +1641,8 @@ function quizAnswer(btn, value){
     quiz.showPegamoleAtAnswer = true;
     quiz.pegamoleAnswerX = q.pegamoleAnswerX;
     quiz.pegamoleAnswerY = q.pegamoleAnswerY;
+    quiz.pegamoleCelebrating = correct;
+    if(correct) quiz.pegamoleCelebrateStart = performance.now();
 
     // Parse the student's selected coordinate string to get x,y
     let selX = q.pegamoleAnswerX, selY = q.pegamoleAnswerY; // default to correct
@@ -1618,6 +1657,16 @@ function quizAnswer(btn, value){
     animateTo(state.walker, selX);
     state.ellie.pos = selY;
     animateTo(state.ellie, selY);
+
+    // Stop celebration after a bit
+    if(correct){
+      // Keep redrawing during celebration
+      function celebLoop(){
+        if(quiz.pegamoleCelebrating){ draw(); requestAnimationFrame(celebLoop); }
+      }
+      requestAnimationFrame(celebLoop);
+      setTimeout(() => { quiz.pegamoleCelebrating = false; draw(); }, 2500);
+    }
   } else if(q.vizEnd){
     if(q.vizEnd.walker !== undefined){
       state.walker.pos = q.vizEnd.walker;
