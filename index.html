@@ -1598,8 +1598,27 @@ function quizAnswer(btn, value){
   document.getElementById('quizScoreText').textContent = `${quiz.correct}/${quiz.qNum}`;
   document.getElementById('quizProgressFill').style.width = `${(quiz.qNum/quiz.total)*100}%`;
 
-  // ---- PHASE 2: Animate to ending (answer) position ----
-  if(q.vizEnd){
+  // ---- PHASE 2: Animate to show the answer ----
+  // For find_point: Walker/Ellie go to the STUDENT's chosen point, Pegamole at correct point
+  if(q.showPegamoleAtAnswer){
+    quiz.showPegamoleAtAnswer = true;
+    quiz.pegamoleAnswerX = q.pegamoleAnswerX;
+    quiz.pegamoleAnswerY = q.pegamoleAnswerY;
+
+    // Parse the student's selected coordinate string to get x,y
+    let selX = q.pegamoleAnswerX, selY = q.pegamoleAnswerY; // default to correct
+    if(isStr && typeof value === 'string'){
+      const m = value.match(/\(([^,]+),\s*([^)]+)\)/);
+      if(m){
+        selX = parseInt(m[1]);
+        selY = parseInt(m[2]);
+      }
+    }
+    state.walker.pos = selX;
+    animateTo(state.walker, selX);
+    state.ellie.pos = selY;
+    animateTo(state.ellie, selY);
+  } else if(q.vizEnd){
     if(q.vizEnd.walker !== undefined){
       state.walker.pos = q.vizEnd.walker;
       animateTo(state.walker, q.vizEnd.walker);
@@ -1612,13 +1631,6 @@ function quizAnswer(btn, value){
 
   // Show distance bracket after answer for distance questions
   if(q.showDistanceBracket) quiz.showDistanceBracket = true;
-
-  // Show Pegamole at the correct answer point
-  if(q.showPegamoleAtAnswer){
-    quiz.showPegamoleAtAnswer = true;
-    quiz.pegamoleAnswerX = q.pegamoleAnswerX;
-    quiz.pegamoleAnswerY = q.pegamoleAnswerY;
-  }
 
   draw();
 }
