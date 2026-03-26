@@ -1,832 +1,980 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Number Line Explorer</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Integer Explorer</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: 'Fredoka', sans-serif;
-    background: #2A2A3A;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    user-select: none;
+  :root{
+    --bg:#2a2a3a;
+    --panel:#333348;
+    --ok:#2f7f1f;
+    --bad:#d90000;
+    --muted:#5a5a7a;
   }
 
-  .top-bar {
-    display: flex;
-    gap: 4px;
-    padding: 6px 8px;
-    background: #2A2A3A;
+  body{
+    height:100vh;
+    overflow:hidden;
+    background:var(--bg);
+    font-family:'Fredoka',sans-serif;
+    color:#fff;
+    user-select:none;
   }
 
-  .tab {
-    flex: 1;
-    padding: 7px 10px;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Fredoka', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #fff7;
-    background: #3A3A4A;
-  }
-  .tab.active { background: #555570; color: #fff; }
-  .tab:hover:not(.active) { background: #44445A; }
-
-  .main {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
+  .app{
+    height:100%;
+    display:grid;
+    grid-template-columns: clamp(360px, 34vw, 460px) 1fr;
   }
 
-  /* Left side panel: controls */
-  .side-panel {
-    width: 100px;
-    background: #333348;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px 6px;
-    gap: 8px;
-    flex-shrink: 0;
+  .panel{
+    background:var(--panel);
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    gap:8px;
+    padding:8px;
+    overflow:hidden;
+    border:none;
+    box-shadow:none;
   }
 
-  .pos-box {
-    background: #2A2A3A;
-    border-radius: 10px;
-    padding: 6px 8px;
-    text-align: center;
-    width: 88px;
+  .view-select{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:7px;
   }
-  .pos-box .label {
-    font-size: 10px;
-    color: #fff7;
-    font-weight: 500;
+  .view-btn{
+    border:0;
+    border-radius:10px;
+    height:44px;
+    font:700 16px 'Fredoka',sans-serif;
+    color:#fff;
+    background:#4a4a63;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:10px;
+    padding:0 12px;
   }
-  .pos-box .value {
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
+  .view-btn.active{ background:#6e6ea0; }
+
+  .center-controls{
+    display:grid;
+    place-items:center;
   }
 
-  .ctrl-btn {
-    width: 80px;
-    height: 38px;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Fredoka', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    transition: all 0.12s;
-    color: #fff;
-  }
-  .ctrl-btn.pos { background: #4CAF50; }
-  .ctrl-btn.pos:hover { background: #5CBF60; }
-  .ctrl-btn.pos:active { background: #3C9F40; transform: scale(0.95); }
-  .ctrl-btn.neg { background: #E05555; }
-  .ctrl-btn.neg:hover { background: #F06565; }
-  .ctrl-btn.neg:active { background: #D04545; transform: scale(0.95); }
-
-  .home-btn {
-    width: 42px; height: 42px;
-    border: none; border-radius: 50%;
-    background: #5A5A7A; color: #fff;
-    font-size: 18px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.12s;
-    margin-top: 4px;
-  }
-  .home-btn:hover { background: #6A6A8A; }
-  .home-btn:active { transform: scale(0.95); }
-
-  .info-text {
-    font-size: 11px;
-    color: #fff8;
-    text-align: center;
-    line-height: 1.3;
-    margin-top: auto;
-    padding: 4px;
+  .compass{
+    width:min(100%, 346px);
+    display:grid;
+    grid-template-columns: 106px 106px 106px;
+    grid-template-rows: 106px 106px 106px;
+    gap:14px;
+    justify-content:center;
+    align-content:center;
   }
 
-  .divider {
-    width: 60px;
-    height: 1px;
-    background: #ffffff20;
-    margin: 2px 0;
+  .arrow{
+    border:0;
+    color:#fff;
+    font:700 34px 'Fredoka',sans-serif;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    text-shadow:0 1px 0 #0006;
+    transition:opacity .12s;
+    width:106px;
+    height:106px;
+  }
+  .arrow.pos{ background:var(--ok); }
+  .arrow.neg{ background:var(--bad); }
+
+  .arrow.up{
+    grid-column:2; grid-row:1;
+    clip-path:polygon(50% 0,100% 42%,72% 42%,72% 100%,28% 100%,28% 42%,0 42%);
+  }
+  .arrow.down{
+    grid-column:2; grid-row:3;
+    clip-path:polygon(28% 0,72% 0,72% 58%,100% 58%,50% 100%,0 58%,28% 58%);
+  }
+  .arrow.left{
+    grid-column:1; grid-row:2;
+    clip-path:polygon(0 50%,42% 0,42% 28%,100% 28%,100% 72%,42% 72%,42% 100%);
+  }
+  .arrow.right{
+    grid-column:3; grid-row:2;
+    clip-path:polygon(58% 0,58% 28%,0 28%,0 72%,58% 72%,58% 100%,100% 50%);
   }
 
-  .section-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #fff5;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+  .home{
+    grid-column:2; grid-row:2;
+    width:106px; height:106px;
+    border:0;
+    border-radius:16px;
+    background:#101015;
+    color:#fff;
+    font:700 48px 'Fredoka',sans-serif;
+    cursor:pointer;
   }
 
-  /* Canvas area */
-  .canvas-area {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-  }
-  canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
+  .disabled{
+    opacity:0.35;
+    filter:saturate(.6);
   }
 
-  .tab-view { display: none; width: 100%; height: 100%; }
-  .tab-view.active { display: flex; }
+  .status{
+    margin-top:8px;
+    text-align:center;
+    font-size:16px;
+    color:#ffffffd0;
+    line-height:1.2;
+  }
+
+  .zoom{
+    display:grid;
+    gap:8px;
+  }
+  .zoom-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:5px;
+  }
+  .zoom-btn{
+    border:0;
+    border-radius:10px;
+    height:44px;
+    font:700 16px 'Fredoka',sans-serif;
+    color:#fff;
+    background:var(--muted);
+    cursor:pointer;
+  }
+
+  .pegamole-btn{
+    border:0;
+    border-radius:10px;
+    height:44px;
+    font:700 16px 'Fredoka',sans-serif;
+    color:#fff;
+    background:#8B5E3C;
+    cursor:pointer;
+    width:100%;
+    transition: background 0.15s;
+  }
+  .pegamole-btn:hover{ background:#A0704A; }
+  .pegamole-btn:active{ transform:scale(0.97); }
+
+  .tiny{
+    text-align:center;
+    font-size:14px;
+    color:#ffffffc7;
+    line-height:1.15;
+  }
+
+  .score-display{
+    text-align:center;
+    font-size:15px;
+    color:#FFD700;
+    font-weight:600;
+  }
+
+  .stage{
+    height:100%;
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+  }
+
+  .viewport{
+    height:100%;
+    width:min(100%, 100vh);
+    aspect-ratio:1/1;
+    background:#222;
+  }
+
+  canvas{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+
+  @media (max-width: 900px){
+    .app{ grid-template-columns: clamp(250px, 38vw, 320px) 1fr; }
+    .view-btn,.zoom-btn,.pegamole-btn{ height:36px; font-size:13px; }
+    .compass{
+      width:min(100%, 236px);
+      grid-template-columns: 72px 72px 72px;
+      grid-template-rows: 72px 72px 72px;
+      gap:10px;
+    }
+    .arrow{ font-size:24px; }
+    .arrow.up,.arrow.down,.arrow.left,.arrow.right{ width:72px; height:72px; }
+    .home{ width:72px; height:72px; font-size:32px; border-radius:12px; }
+    .status{ font-size:12px; }
+    .tiny{ font-size:11px; }
+  }
 </style>
 </head>
 <body>
-
-<div class="top-bar">
-  <button class="tab active" onclick="switchTab(0)">🚶 Walker's Street</button>
-  <button class="tab" onclick="switchTab(1)">🛗 Ellie's Elevator</button>
-  <button class="tab" onclick="switchTab(2)">📍 Graph</button>
-</div>
-
-<div class="main">
-  <div class="tab-view active" id="tab0">
-    <div class="side-panel">
-      <div class="pos-box">
-        <div class="label">Position</div>
-        <div class="value" id="pos0">0</div>
-      </div>
-      <button class="ctrl-btn pos" onclick="move(0,1)">▶ +1</button>
-      <button class="ctrl-btn neg" onclick="move(0,-1)">◀ −1</button>
-      <button class="home-btn" onclick="goHome(0)">🏠</button>
-      <div class="info-text" id="info0">Walker is home!</div>
+<div class="app">
+  <aside class="panel">
+    <div class="view-select">
+      <button id="btnStreet" class="view-btn active" onclick="setMode('street')">🚶 Street</button>
+      <button id="btnElevator" class="view-btn" onclick="setMode('elevator')">🛗 Elevator</button>
+      <button id="btnBoth" class="view-btn" onclick="setMode('both')">📍 Both</button>
     </div>
-    <div class="canvas-area"><canvas id="canvas0"></canvas></div>
-  </div>
 
-  <div class="tab-view" id="tab1">
-    <div class="side-panel">
-      <div class="pos-box">
-        <div class="label">Floor</div>
-        <div class="value" id="pos1">0</div>
+    <div class="center-controls">
+      <div>
+        <div class="compass">
+          <button id="upBtn" class="arrow up pos" onclick="pressUp()">+1</button>
+          <button id="leftBtn" class="arrow left neg" onclick="pressLeft()">-1</button>
+          <button class="home" onclick="goHome()">🏠</button>
+          <button id="rightBtn" class="arrow right pos" onclick="pressRight()">+1</button>
+          <button id="downBtn" class="arrow down neg" onclick="pressDown()">-1</button>
+        </div>
+        <div id="status" class="status">Walker: 0 | Ellie: 0 | Point: (0, 0)</div>
       </div>
-      <button class="ctrl-btn pos" onclick="move(1,1)">▲ +1</button>
-      <button class="ctrl-btn neg" onclick="move(1,-1)">▼ −1</button>
-      <button class="home-btn" onclick="goHome(1)">🏠</button>
-      <div class="info-text" id="info1">Ellie is on the ground floor!</div>
     </div>
-    <div class="canvas-area"><canvas id="canvas1"></canvas></div>
-  </div>
 
-  <div class="tab-view" id="tab2">
-    <div class="side-panel">
-      <div class="section-label">Walker</div>
-      <div class="pos-box" style="margin-bottom:2px;">
-        <div class="label">X Position</div>
-        <div class="value" id="pos2x">0</div>
+    <div class="zoom">
+      <div id="pegamoleControls" style="display:none; margin-bottom:8px;">
+        <button class="pegamole-btn" onclick="spawnPegamole()">🐾 Find Pegamole!</button>
+        <div id="pegamoleStatus" class="tiny" style="margin-top:6px;">Press the button to hide Pegamole!</div>
+        <div id="scoreDisplay" class="score-display" style="margin-top:4px;"></div>
       </div>
-      <button class="ctrl-btn pos" onclick="move(2,1,'x')" style="height:32px;font-size:13px;">▶ +1</button>
-      <button class="ctrl-btn neg" onclick="move(2,-1,'x')" style="height:32px;font-size:13px;">◀ −1</button>
-      <div class="divider"></div>
-      <div class="section-label">Ellie</div>
-      <div class="pos-box" style="margin-bottom:2px;">
-        <div class="label">Y Floor</div>
-        <div class="value" id="pos2y">0</div>
+      <div class="zoom-row">
+        <button class="zoom-btn" onclick="zoom(-1)">Zoom In</button>
+        <button class="zoom-btn" onclick="resetZoom()">Reset</button>
+        <button class="zoom-btn" onclick="zoom(1)">Zoom Out</button>
       </div>
-      <button class="ctrl-btn pos" onclick="move(2,1,'y')" style="height:32px;font-size:13px;">▲ +1</button>
-      <button class="ctrl-btn neg" onclick="move(2,-1,'y')" style="height:32px;font-size:13px;">▼ −1</button>
-      <div class="divider"></div>
-      <div class="pos-box">
-        <div class="label">Point</div>
-        <div class="value" id="pos2pt" style="font-size:16px;">(0, 0)</div>
-      </div>
-      <button class="home-btn" onclick="goHome(2)">🏠</button>
+      <div id="rangeText" class="tiny">View: -10..+10</div>
+      <div class="tiny">Green up/right = +1, red down/left = -1</div>
     </div>
-    <div class="canvas-area"><canvas id="canvas2"></canvas></div>
-  </div>
+  </aside>
+
+  <main class="stage">
+    <div class="viewport">
+      <canvas id="canvas"></canvas>
+    </div>
+  </main>
 </div>
 
 <script>
-const MAX = 10;
-const state = {
-  tab: 0,
-  walker:  { pos: 0, animPos: 0, animating: false, stepPhase: 0, lastDir: 1 },
-  ellie:   { pos: 0, animPos: 0, animating: false },
-  walker2: { pos: 0, animPos: 0, animating: false, stepPhase: 0, lastDir: 1 },
-  ellie2:  { pos: 0, animPos: 0, animating: false },
+const HARD_LIMIT = 100;
+const MIN_RANGE = 3;
+const MAX_RANGE = 24;
+
+const C = {
+  sky:'#87CEEB', ground:'#C4A265', grass:'#5A9E3E', road:'#555', dash:'#E8C840',
+  pos:'#3A7D3E', neg:'#B04040',
+  houseWall:'#3D8B6E', houseStroke:'#2D6B4E', roof:'#8B3A2F', door:'#6B4226', knob:'#C4A265', window:'#ADE0F7',
+  floorUp:'#D4594A', floorUpStroke:'#B03A2F', floorDown:'#7A6050', floorDownStroke:'#5A4030',
+  walker:'#EAEAEA', ellie:'#FFD700',
+  pegamole:'#6B4226', pegamoleWing:'#D4C5A9'
 };
 
-const canvases = [], ctxs = [];
-
-function initCanvases() {
-  for (let i = 0; i < 3; i++) {
-    const c = document.getElementById('canvas' + i);
-    canvases.push(c);
-    ctxs.push(c.getContext('2d'));
+const state = {
+  mode: 'street',
+  zoom: { street: 10, elevator: 10, bothX: 10, bothY: 10 },
+  walker: { pos:0, animPos:0, animating:false, stepPhase:0, lastDir:1 },
+  ellie:  { pos:0, animPos:0, animating:false },
+  pegamole: {
+    active: false,
+    x: 0, y: 0,
+    found: false,
+    celebrating: false,
+    celebrateStart: 0,
+    score: 0,
+    totalMoves: 0,
+    wingPhase: 0
   }
-  resize();
-  window.addEventListener('resize', resize);
-}
+};
 
-function resize() {
-  canvases.forEach(c => {
-    const p = c.parentElement;
-    if (!p) return;
-    const dpr = window.devicePixelRatio || 1;
-    c.width = p.clientWidth * dpr;
-    c.height = p.clientHeight * dpr;
-    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
-    c.style.width = p.clientWidth + 'px';
-    c.style.height = p.clientHeight + 'px';
-  });
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let wingAnimFrame = null;
+
+function fp(n){ return n === 0 ? '0' : (n > 0 ? '+' + n : '' + n); }
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(2, Math.floor(r.width * dpr));
+  canvas.height = Math.max(2, Math.floor(r.height * dpr));
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function setMode(mode){
+  state.mode = mode;
+  document.getElementById('btnStreet').classList.toggle('active', mode === 'street');
+  document.getElementById('btnElevator').classList.toggle('active', mode === 'elevator');
+  document.getElementById('btnBoth').classList.toggle('active', mode === 'both');
+  document.getElementById('pegamoleControls').style.display = mode === 'both' ? 'block' : 'none';
+  refreshArrowState();
+  updatePanelText();
   draw();
 }
 
-function switchTab(idx) {
-  state.tab = idx;
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
-  document.querySelectorAll('.tab-view').forEach((v, i) => v.classList.toggle('active', i === idx));
-  setTimeout(resize, 20);
+function refreshArrowState(){
+  const xEnabled = state.mode !== 'elevator';
+  const yEnabled = state.mode !== 'street';
+  document.getElementById('leftBtn').classList.toggle('disabled', !xEnabled);
+  document.getElementById('rightBtn').classList.toggle('disabled', !xEnabled);
+  document.getElementById('upBtn').classList.toggle('disabled', !yEnabled);
+  document.getElementById('downBtn').classList.toggle('disabled', !yEnabled);
 }
 
-function dims(canvas) {
-  const dpr = window.devicePixelRatio || 1;
-  return { w: canvas.width / dpr, h: canvas.height / dpr };
-}
-
-// ========== MOVEMENT ==========
-function getChar(tab, axis) {
-  if (tab === 0) return state.walker;
-  if (tab === 1) return state.ellie;
-  return axis === 'y' ? state.ellie2 : state.walker2;
-}
-
-function move(tab, dir, axis) {
-  const ch = getChar(tab, axis);
-  if (ch.animating) return;
-  const newPos = ch.pos + dir;
-  if (newPos < -MAX || newPos > MAX) return;
-
-  ch.animating = true;
-  ch.pos = newPos;
-  if (ch.lastDir !== undefined) ch.lastDir = dir;
-  updateUI(tab, axis);
-
-  const startPos = ch.animPos;
-  const endPos = newPos;
-  const startTime = performance.now();
-  const duration = 400;
-
-  function animate(now) {
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    ch.animPos = startPos + (endPos - startPos) * ease;
-    if (ch.stepPhase !== undefined) ch.stepPhase = Math.sin(t * Math.PI);
-    draw();
-    if (t < 1) requestAnimationFrame(animate);
-    else {
-      ch.animPos = endPos;
-      ch.animating = false;
-      if (ch.stepPhase !== undefined) ch.stepPhase = 0;
-      draw();
-    }
-  }
-  requestAnimationFrame(animate);
-}
-
-function goHome(tab) {
-  if (tab === 2) {
-    doAnimateTo(state.walker2, 0);
-    doAnimateTo(state.ellie2, 0);
-    state.walker2.pos = 0; state.ellie2.pos = 0;
-    updateUI(2, 'x'); updateUI(2, 'y');
-  } else {
-    const ch = getChar(tab);
-    doAnimateTo(ch, 0);
-    ch.pos = 0;
-    updateUI(tab);
-  }
-}
-
-function doAnimateTo(ch, target) {
+function animateTo(ch, target){
   if (ch.animating) return;
   ch.animating = true;
-  if (ch.lastDir !== undefined) ch.lastDir = target > ch.animPos ? 1 : -1;
-  const startPos = ch.animPos;
-  const startTime = performance.now();
-  const dist = Math.abs(target - startPos);
-  const duration = Math.min(900, 200 + dist * 70);
-  function animate(now) {
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    ch.animPos = startPos + (target - startPos) * ease;
-    if (ch.stepPhase !== undefined) ch.stepPhase = Math.abs(Math.sin(t * Math.PI * Math.max(1, dist)));
+  if ('lastDir' in ch) ch.lastDir = target >= ch.animPos ? 1 : -1;
+  const start = ch.animPos;
+  const t0 = performance.now();
+  const dist = Math.abs(target - start);
+  const dur = Math.min(900, 220 + dist * 70);
+  function step(now){
+    const t = Math.min((now - t0) / dur, 1);
+    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    ch.animPos = start + (target - start) * e;
+    if ('stepPhase' in ch) ch.stepPhase = Math.abs(Math.sin(t * Math.PI * Math.max(1, dist)));
     draw();
-    if (t < 1) requestAnimationFrame(animate);
+    if (t < 1) requestAnimationFrame(step);
     else {
       ch.animPos = target;
       ch.animating = false;
-      if (ch.stepPhase !== undefined) ch.stepPhase = 0;
+      if ('stepPhase' in ch) ch.stepPhase = 0;
       draw();
+      checkPegamoleFound();
     }
   }
-  requestAnimationFrame(animate);
+  requestAnimationFrame(step);
 }
 
-function fp(p) { return p === 0 ? '0' : (p > 0 ? '+' + p : '' + p); }
+function nudge(ch, dir){
+  if (ch.animating) return;
+  const next = ch.pos + dir;
+  if (next < -HARD_LIMIT || next > HARD_LIMIT) return;
+  ch.animating = true;
+  ch.pos = next;
+  if ('lastDir' in ch) ch.lastDir = dir;
+  if (state.pegamole.active && !state.pegamole.found) state.pegamole.totalMoves++;
+  updatePanelText();
+  const start = ch.animPos;
+  const end = next;
+  const t0 = performance.now();
+  const dur = 340;
+  function step(now){
+    const t = Math.min((now - t0) / dur, 1);
+    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    ch.animPos = start + (end - start) * e;
+    if ('stepPhase' in ch) ch.stepPhase = Math.sin(t * Math.PI);
+    draw();
+    if (t < 1) requestAnimationFrame(step);
+    else {
+      ch.animPos = end;
+      ch.animating = false;
+      if ('stepPhase' in ch) ch.stepPhase = 0;
+      draw();
+      checkPegamoleFound();
+    }
+  }
+  requestAnimationFrame(step);
+}
 
-function updateUI(tab, axis) {
-  if (tab === 0) {
-    const p = state.walker.pos;
-    document.getElementById('pos0').textContent = fp(p);
-    document.getElementById('info0').textContent = p === 0 ? "Walker is home!" :
-      p > 0 ? `${p} step${p !== 1 ? 's' : ''} forward` :
-      `${-p} step${-p !== 1 ? 's' : ''} backward`;
-  } else if (tab === 1) {
-    const p = state.ellie.pos;
-    document.getElementById('pos1').textContent = fp(p);
-    document.getElementById('info1').textContent = p === 0 ? "Ground floor!" :
-      p > 0 ? `Floor +${p}` : `Basement ${p}`;
+function pressLeft(){ if (state.mode !== 'elevator') nudge(state.walker, -1); }
+function pressRight(){ if (state.mode !== 'elevator') nudge(state.walker, +1); }
+function pressUp(){ if (state.mode !== 'street') nudge(state.ellie, +1); }
+function pressDown(){ if (state.mode !== 'street') nudge(state.ellie, -1); }
+
+function goHome(){
+  animateTo(state.walker, 0);
+  animateTo(state.ellie, 0);
+  state.walker.pos = 0;
+  state.ellie.pos = 0;
+  updatePanelText();
+}
+
+function zoom(dir){
+  if (state.mode === 'street') state.zoom.street = clamp(state.zoom.street + dir, MIN_RANGE, MAX_RANGE);
+  else if (state.mode === 'elevator') state.zoom.elevator = clamp(state.zoom.elevator + dir, MIN_RANGE, MAX_RANGE);
+  else {
+    state.zoom.bothX = clamp(state.zoom.bothX + dir, MIN_RANGE, MAX_RANGE);
+    state.zoom.bothY = clamp(state.zoom.bothY + dir, MIN_RANGE, MAX_RANGE);
+  }
+  updatePanelText(); draw();
+}
+
+function resetZoom(){
+  if (state.mode === 'street') state.zoom.street = 10;
+  else if (state.mode === 'elevator') state.zoom.elevator = 10;
+  else { state.zoom.bothX = 10; state.zoom.bothY = 10; }
+  updatePanelText(); draw();
+}
+
+// ========== PEGAMOLE ==========
+function spawnPegamole(){
+  const pm = state.pegamole;
+  const rx = state.zoom.bothX;
+  const ry = state.zoom.bothY;
+  // Random position within current zoom range, excluding origin
+  let px, py;
+  do {
+    px = Math.floor(Math.random() * (rx * 2 + 1)) - rx;
+    py = Math.floor(Math.random() * (ry * 2 + 1)) - ry;
+  } while (px === 0 && py === 0);
+
+  pm.x = px;
+  pm.y = py;
+  pm.active = true;
+  pm.found = false;
+  pm.celebrating = false;
+  pm.totalMoves = 0;
+
+  // Start wing flapping animation
+  startWingAnim();
+
+  updatePanelText();
+  draw();
+}
+
+function startWingAnim(){
+  if (wingAnimFrame) return;
+  function flap(){
+    state.pegamole.wingPhase = (performance.now() / 200) % (Math.PI * 2);
+    draw();
+    if (state.pegamole.active) wingAnimFrame = requestAnimationFrame(flap);
+    else wingAnimFrame = null;
+  }
+  wingAnimFrame = requestAnimationFrame(flap);
+}
+
+function checkPegamoleFound(){
+  const pm = state.pegamole;
+  if (!pm.active || pm.found) return;
+  if (state.walker.pos === pm.x && state.ellie.pos === pm.y) {
+    pm.found = true;
+    pm.celebrating = true;
+    pm.celebrateStart = performance.now();
+    pm.score++;
+    updatePanelText();
+    // Celebrate for 2 seconds then allow respawn
+    setTimeout(() => {
+      pm.celebrating = false;
+      draw();
+    }, 2500);
+  }
+}
+
+function updatePanelText(){
+  const w = state.walker.pos;
+  const e = state.ellie.pos;
+  document.getElementById('status').textContent = `Walker: ${fp(w)} | Ellie: ${fp(e)} | Point: (${fp(w)}, ${fp(e)})`;
+
+  let txt;
+  if (state.mode === 'street') {
+    txt = `View: ${-state.zoom.street}..+${state.zoom.street}`;
+  } else if (state.mode === 'elevator') {
+    txt = `View: ${-state.zoom.elevator}..+${state.zoom.elevator}`;
   } else {
-    if (!axis || axis === 'x') document.getElementById('pos2x').textContent = fp(state.walker2.pos);
-    if (!axis || axis === 'y') document.getElementById('pos2y').textContent = fp(state.ellie2.pos);
-    document.getElementById('pos2pt').textContent = `(${fp(state.walker2.pos)}, ${fp(state.ellie2.pos)})`;
+    txt = `X: ${-state.zoom.bothX}..+${state.zoom.bothX} | Y: ${-state.zoom.bothY}..+${state.zoom.bothY}`;
+  }
+  document.getElementById('rangeText').textContent = txt;
+
+  // Pegamole status
+  const pm = state.pegamole;
+  const psEl = document.getElementById('pegamoleStatus');
+  const scEl = document.getElementById('scoreDisplay');
+  if (state.mode === 'both') {
+    if (!pm.active) {
+      psEl.textContent = 'Press the button to hide Pegamole!';
+    } else if (pm.found) {
+      psEl.textContent = `🎉 Found Pegamole at (${fp(pm.x)}, ${fp(pm.y)}) in ${pm.totalMoves} moves!`;
+    } else {
+      // Hint: how far away
+      const dx = pm.x - w;
+      const dy = pm.y - e;
+      const xHint = dx === 0 ? "Walker is lined up!" : (dx > 0 ? `Walker: ${dx} more to the right` : `Walker: ${-dx} more to the left`);
+      const yHint = dy === 0 ? "Ellie is lined up!" : (dy > 0 ? `Ellie: ${dy} more up` : `Ellie: ${-dy} more down`);
+      psEl.textContent = `🐾 ${xHint} · ${yHint}`;
+    }
+    scEl.textContent = pm.score > 0 ? `Pegamoles found: ${pm.score}` : '';
   }
 }
 
 // ========== DRAWING ==========
-function draw() {
-  const t = state.tab;
-  if (t === 0) drawStreet(ctxs[0], canvases[0], state.walker);
-  else if (t === 1) drawElevator(ctxs[1], canvases[1], state.ellie);
-  else drawCombined(ctxs[2], canvases[2], state.walker2, state.ellie2);
+function drawSkyGround(w, h, horizonY){
+  ctx.fillStyle = C.sky; ctx.fillRect(0, 0, w, horizonY);
+  ctx.fillStyle = C.ground; ctx.fillRect(0, horizonY, w, h - horizonY);
 }
 
-// ===== WALKER: Simplified clean-line icon based on image_0.png, backward walk =====
-function drawWalker(ctx, cx, cy, unit, legPhase, moveDir) {
-  const s = unit * 0.88;
-  ctx.save();
-  ctx.translate(cx, cy);
-  // Character always faces right. Leg logic creates moonwalk look. NO ctx.scale().
-  ctx.fillStyle = '#EAEAEA';
-  ctx.strokeStyle = '#EAEAEA';
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  // Head (clean circle, no features)
-  const headR = s * 0.11;
-  const headCY = -s * 0.42;
-  ctx.beginPath();
-  ctx.arc(0, headCY, headR, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Torso (clean trapezoid form)
-  const shoulderY = headCY + headR + s * 0.01;
-  const hipY = -s * 0.15;
-  const dressBottom = s * 0.0;
-  const shoulderW = s * 0.1;
-  const dressW = s * 0.1;
-
-  ctx.beginPath();
-  ctx.moveTo(-shoulderW, shoulderY);
-  ctx.lineTo(shoulderW, shoulderY);
-  ctx.lineTo(dressW, hipY);
-  ctx.lineTo(-dressW, hipY);
-  ctx.closePath();
-  ctx.fill();
-
-  // Arms (fixed clean strokes, matching image pose, always facing right)
-  const armW = Math.max(2.5, s * 0.06);
-  ctx.lineWidth = armW;
-  // Front arm (matching the icon's clean pose)
-  ctx.beginPath();
-  ctx.moveTo(shoulderW, shoulderY + s * 0.02);
-  ctx.lineTo(s * 0.1, shoulderY + s * 0.2);
-  ctx.stroke();
-  // Back arm (matching the icon's clean pose)
-  ctx.beginPath();
-  ctx.moveTo(-shoulderW, shoulderY + s * 0.02);
-  ctx.lineTo(-s * 0.1, shoulderY + s * 0.25);
-  ctx.stroke();
-
-  // Legs (animated, but always from fixed hips to create a moonwalk look when moving -1)
-  const legW = Math.max(3, s * 0.08);
-  ctx.lineWidth = legW;
-  const animationRange = s * 0.22;
-  const stride = legPhase * animationRange * moveDir;
-  
-  // Front leg (angles forward from character's center)
-  ctx.beginPath();
-  ctx.moveTo(s * 0.03, hipY);
-  ctx.lineTo(s * 0.2 + stride, hipY + s * 0.3);
-  ctx.stroke();
-  // Back leg (angles backward from character's center)
-  ctx.beginPath();
-  ctx.moveTo(-s * 0.03, hipY);
-  ctx.lineTo(-s * 0.1 - stride, hipY + s * 0.35);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-// ===== ELLIE: Women's restroom silhouette =====
-function drawEllie(ctx, cx, cy, unit) {
-  const s = unit * 0.85;
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.fillStyle = '#FFD700';
-  ctx.strokeStyle = '#FFD700';
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  // Head
-  const headR = s * 0.1;
-  const headCY = -s * 0.42;
-  ctx.beginPath();
-  ctx.arc(0, headCY, headR, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Body/dress — A-line trapezoid shape like the restroom sign
-  const shoulderY = headCY + headR + s * 0.01;
-  const dressBottom = s * 0.12;
-  const shoulderW = s * 0.1;
-  const dressW = s * 0.2;
-
-  ctx.beginPath();
-  ctx.moveTo(-shoulderW, shoulderY);
-  ctx.lineTo(shoulderW, shoulderY);
-  ctx.lineTo(dressW, dressBottom);
-  ctx.lineTo(-dressW, dressBottom);
-  ctx.closePath();
-  ctx.fill();
-
-  // Arms at sides (slightly out, like restroom figure)
-  const armW = Math.max(2, s * 0.055);
-  ctx.lineWidth = armW;
-  // Left arm
-  ctx.beginPath();
-  ctx.moveTo(-shoulderW, shoulderY + s * 0.02);
-  ctx.lineTo(-s * 0.18, shoulderY + s * 0.17);
-  ctx.stroke();
-  // Right arm
-  ctx.beginPath();
-  ctx.moveTo(shoulderW, shoulderY + s * 0.02);
-  ctx.lineTo(s * 0.18, shoulderY + s * 0.17);
-  ctx.stroke();
-
-  // Legs (straight, visible below dress)
-  const legW = Math.max(2.5, s * 0.06);
-  ctx.lineWidth = legW;
-  ctx.beginPath();
-  ctx.moveTo(-s * 0.06, dressBottom);
-  ctx.lineTo(-s * 0.07, dressBottom + s * 0.25);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(s * 0.06, dressBottom);
-  ctx.lineTo(s * 0.07, dressBottom + s * 0.25);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-// ===== HOUSE (ground floor only, no roof) =====
-function drawGroundFloor(ctx, x, y, w, h) {
-  // Ground floor is a distinct warm green/teal
-  ctx.fillStyle = '#3D8B6E';
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = '#2D6B4E';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(x, y, w, h);
-
-  // Door
-  ctx.fillStyle = '#6B4226';
-  const dw = w * 0.28, dh = h * 0.42;
-  ctx.fillRect(x + w / 2 - dw / 2, y + h - dh, dw, dh);
-  ctx.fillStyle = '#C4A265';
-  ctx.beginPath();
-  ctx.arc(x + w / 2 + dw * 0.22, y + h - dh / 2, Math.max(1.5, w * 0.025), 0, Math.PI * 2);
-  ctx.fill();
-
-  // Window
-  const ws = w * 0.2;
-  ctx.fillStyle = '#ADE0F7';
-  ctx.fillRect(x + w / 2 - ws / 2, y + h * 0.15, ws, ws);
-  ctx.strokeStyle = '#2D6B4E';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x + w / 2 - ws / 2, y + h * 0.15, ws, ws);
-
-  // "0" above
-  ctx.fillStyle = '#ffffffcc';
-  ctx.font = `bold ${Math.max(10, w * 0.3)}px Fredoka`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText('0', x + w / 2, y - 2);
-}
-
-// ===== HOUSE for street view (with roof) =====
-function drawHouseWithRoof(ctx, x, y, w, h) {
-  // Wall
-  ctx.fillStyle = '#3D8B6E';
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = '#2D6B4E';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(x, y, w, h);
-
-  // Roof
+function drawHouseWithRoof(x, y, w, h){
+  ctx.fillStyle = C.houseWall; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = C.houseStroke; ctx.lineWidth = 1.4; ctx.strokeRect(x, y, w, h);
   const roofH = h * 0.3;
-  ctx.fillStyle = '#8B3A2F';
+  ctx.fillStyle = C.roof;
   ctx.beginPath();
   ctx.moveTo(x - w * 0.1, y);
   ctx.lineTo(x + w / 2, y - roofH);
   ctx.lineTo(x + w * 1.1, y);
-  ctx.closePath();
-  ctx.fill();
-
-  // Door
-  ctx.fillStyle = '#6B4226';
-  const dw = w * 0.26, dh = h * 0.4;
-  ctx.fillRect(x + w / 2 - dw / 2, y + h - dh, dw, dh);
-  ctx.fillStyle = '#C4A265';
-  ctx.beginPath();
-  ctx.arc(x + w / 2 + dw * 0.22, y + h - dh / 2, Math.max(1.5, w * 0.025), 0, Math.PI * 2);
-  ctx.fill();
-
-  // Window
-  const ws = w * 0.2;
-  ctx.fillStyle = '#ADE0F7';
-  ctx.fillRect(x + w / 2 - ws / 2, y + h * 0.15, ws, ws);
-
-  // "0"
-  ctx.fillStyle = '#ffffffcc';
-  ctx.font = `bold ${Math.max(10, w * 0.3)}px Fredoka`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText('0', x + w / 2, y - roofH - 1);
+  ctx.closePath(); ctx.fill();
 }
 
-// ===== TAB 0: STREET =====
-function drawStreet(ctx, canvas, walker) {
-  const { w, h } = dims(canvas);
-  const unit = Math.min(w / 23, h / 5, 44);
+function drawGroundFloor(x, y, w, h){
+  ctx.fillStyle = C.houseWall; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = C.houseStroke; ctx.lineWidth = 1.4; ctx.strokeRect(x, y, w, h);
+}
+
+function drawStreetWorld(cx, roadY, unit, range, showLabels){
   const roadH = unit;
-  const cx = w / 2;
-  const roadY = h / 2 - roadH / 2;
-
-  // Sky
-  ctx.fillStyle = '#87CEEB';
-  ctx.fillRect(0, 0, w, roadY);
-
-  // Grass strip (1 unit tall above road)
-  ctx.fillStyle = '#5A9E3E';
-  ctx.fillRect(0, roadY - unit, w, unit);
-
-  // Ground below road
-  ctx.fillStyle = '#C4A265';
-  ctx.fillRect(0, roadY + roadH, w, h - roadY - roadH);
-
-  // Road
-  ctx.fillStyle = '#555';
-  ctx.fillRect(0, roadY, w, roadH);
-
-  // Yellow dashes
-  ctx.fillStyle = '#E8C840';
-  for (let i = -MAX; i <= MAX; i++) {
-    if (i === 0) continue;
-    if (Math.abs(i) % 2 === 0) {
-      const dx = cx + i * unit - unit / 2;
-      ctx.fillRect(dx + unit * 0.08, roadY + roadH * 0.43, unit * 0.84, roadH * 0.14);
+  ctx.fillStyle = C.road; ctx.fillRect(0, roadY, canvas.clientWidth, roadH);
+  ctx.fillStyle = C.dash;
+  for (let i = -range; i <= range; i++){
+    if (i === 0 || Math.abs(i) % 2 !== 0) continue;
+    const x = cx + i * unit - unit / 2;
+    ctx.fillRect(x + unit * 0.08, roadY + roadH * 0.43, unit * 0.84, roadH * 0.14);
+  }
+  drawHouseWithRoof(cx - unit / 2, roadY, unit, roadH);
+  if (showLabels){
+    ctx.font = `bold ${Math.max(9, unit * 0.28)}px Fredoka`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let i = -range; i <= range; i++){
+      if (i === 0) continue;
+      ctx.fillStyle = i > 0 ? C.pos : C.neg;
+      ctx.fillText(fp(i), cx + i * unit, roadY + roadH + 3);
     }
   }
-
-  // Number labels below road
-  ctx.font = `bold ${Math.max(9, unit * 0.28)}px Fredoka`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  for (let i = -MAX; i <= MAX; i++) {
-    if (i === 0) continue;
-    ctx.fillStyle = i > 0 ? '#3A7D3E' : '#B04040';
-    ctx.fillText(fp(i), cx + i * unit, roadY + roadH + 3);
-  }
-
-  // House at origin (with roof)
-  drawHouseWithRoof(ctx, cx - unit / 2, roadY, unit, roadH);
-
-  // Walker
-  const walkerX = cx + walker.animPos * unit;
-  const walkerY = roadY + roadH / 2 + unit * 0.08;
-  drawWalker(ctx, walkerX, walkerY, unit, walker.stepPhase || 0, walker.lastDir || 1);
 }
 
-// ===== TAB 1: ELEVATOR =====
-function drawElevator(ctx, canvas, ellie) {
-  const { w, h } = dims(canvas);
-  // Use as much vertical space as possible
-  const unit = Math.min(w / 5, (h - 20) / (MAX * 2 + 3), 40);
-  const cx = w / 2;
-  const cy = h / 2;
-  const groundLine = cy + unit / 2;
-
-  // Sky
-  ctx.fillStyle = '#87CEEB';
-  ctx.fillRect(0, 0, w, groundLine);
-
-  // Ground
-  ctx.fillStyle = '#C4A265';
-  ctx.fillRect(0, groundLine, w, h - groundLine);
-
-  // Road context band
-  ctx.fillStyle = '#55555533';
-  ctx.fillRect(0, cy - unit / 2, w, unit);
-
-  // Shaft
+function drawElevatorWorld(cx, cy, unit, range, showLabels){
   const shaftX = cx - unit / 2;
-
-  // Draw floors
-  for (let i = -MAX; i <= MAX; i++) {
+  for (let i = -range; i <= range; i++){
+    if (i === 0) continue;
     const fy = cy - i * unit - unit / 2;
-    if (fy > h + unit || fy < -unit) continue;
-
-    if (i === 0) {
-      // Ground floor — drawn separately below
-      continue;
-    } else if (i > 0) {
-      // Above ground floors
-      ctx.fillStyle = '#D4594A';
-      ctx.fillRect(shaftX, fy, unit, unit);
-      ctx.strokeStyle = '#B03A2F';
-      ctx.lineWidth = 0.7;
-      ctx.strokeRect(shaftX, fy, unit, unit);
-      // Window
+    if (i > 0){
+      ctx.fillStyle = C.floorUp; ctx.fillRect(shaftX, fy, unit, unit);
+      ctx.strokeStyle = C.floorUpStroke; ctx.lineWidth = 0.7; ctx.strokeRect(shaftX, fy, unit, unit);
       const ws = unit * 0.18;
-      ctx.fillStyle = '#ADE0F7';
-      ctx.fillRect(shaftX + unit / 2 - ws / 2, fy + unit * 0.35, ws, ws);
+      ctx.fillStyle = C.window; ctx.fillRect(shaftX + unit/2 - ws/2, fy + unit*0.35, ws, ws);
     } else {
-      // Basement floors
-      ctx.fillStyle = '#7A6050';
-      ctx.fillRect(shaftX, fy, unit, unit);
-      ctx.strokeStyle = '#5A4030';
-      ctx.lineWidth = 0.7;
-      ctx.strokeRect(shaftX, fy, unit, unit);
+      ctx.fillStyle = C.floorDown; ctx.fillRect(shaftX, fy, unit, unit);
+      ctx.strokeStyle = C.floorDownStroke; ctx.lineWidth = 0.7; ctx.strokeRect(shaftX, fy, unit, unit);
+    }
+    if (showLabels){
+      ctx.fillStyle = i > 0 ? C.pos : C.neg;
+      ctx.font = `bold ${Math.max(9, unit*0.27)}px Fredoka`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(fp(i), shaftX + unit + 5, fy + unit/2);
+    }
+  }
+  const topY = cy - range * unit - unit / 2;
+  ctx.fillStyle = C.roof;
+  ctx.beginPath();
+  ctx.moveTo(shaftX - unit*0.12, topY);
+  ctx.lineTo(cx, topY - unit*0.4);
+  ctx.lineTo(shaftX + unit*1.12, topY);
+  ctx.closePath(); ctx.fill();
+
+  drawGroundFloor(shaftX, cy - unit/2, unit, unit);
+
+  ctx.strokeStyle = '#00000020'; ctx.lineWidth = 1;
+  const bottomY = cy + range * unit + unit / 2;
+  ctx.beginPath();
+  ctx.moveTo(shaftX+3, topY); ctx.lineTo(shaftX+3, bottomY);
+  ctx.moveTo(shaftX+unit-3, topY); ctx.lineTo(shaftX+unit-3, bottomY);
+  ctx.stroke();
+  return shaftX;
+}
+
+function drawWalker(cx, cy, unit, phase, dir){
+  const s = unit * 0.9;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = C.walker; ctx.strokeStyle = C.walker;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const headR = s*0.12, headY = -s*0.42;
+  ctx.beginPath(); ctx.arc(0, headY, headR, 0, Math.PI*2); ctx.fill();
+
+  // Nose
+  ctx.beginPath();
+  ctx.moveTo(headR*0.95, headY - headR*0.15);
+  ctx.lineTo(headR + s*0.16, headY);
+  ctx.lineTo(headR*0.95, headY + headR*0.15);
+  ctx.closePath(); ctx.fill();
+
+  const shoulderY = headY + headR + s*0.04;
+  const hipY = -s*0.08;
+  ctx.lineWidth = Math.max(2.5, s*0.07);
+  ctx.beginPath(); ctx.moveTo(0, shoulderY); ctx.lineTo(0, hipY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, shoulderY+s*0.02); ctx.lineTo(-s*0.13, shoulderY+s*0.14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, shoulderY+s*0.04); ctx.lineTo(s*0.18, shoulderY+s*0.18); ctx.stroke();
+
+  const swing = phase * s * 0.11 * dir;
+  ctx.lineWidth = Math.max(3, s*0.085);
+  ctx.beginPath(); ctx.moveTo(0, hipY); ctx.lineTo(s*0.23+swing, s*0.2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, hipY); ctx.lineTo(-s*0.2-swing*0.55, s*0.24); ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawEllie(cx, cy, unit){
+  const s = unit * 0.88;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = C.ellie; ctx.strokeStyle = C.ellie;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+  const headR = s*0.11, headY = -s*0.42;
+  ctx.beginPath(); ctx.arc(0, headY, headR, 0, Math.PI*2); ctx.fill();
+
+  const shoulderY = headY + headR + s*0.03;
+  const hemY = s*0.1;
+  const sw = s*0.11, hw = s*0.24;
+  ctx.beginPath();
+  ctx.moveTo(-sw, shoulderY); ctx.lineTo(sw, shoulderY);
+  ctx.lineTo(hw, hemY); ctx.lineTo(-hw, hemY);
+  ctx.closePath(); ctx.fill();
+
+  ctx.lineWidth = Math.max(2.2, s*0.06);
+  ctx.beginPath(); ctx.moveTo(-sw, shoulderY+s*0.01); ctx.lineTo(-s*0.2, shoulderY+s*0.18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sw, shoulderY+s*0.01); ctx.lineTo(s*0.2, shoulderY+s*0.18); ctx.stroke();
+
+  ctx.lineWidth = Math.max(2.6, s*0.065);
+  ctx.beginPath(); ctx.moveTo(-s*0.07, hemY); ctx.lineTo(-s*0.08, hemY+s*0.26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(s*0.07, hemY); ctx.lineTo(s*0.08, hemY+s*0.26); ctx.stroke();
+
+  ctx.restore();
+}
+
+// ===== PEGAMOLE — side-profile mole with tiny wings =====
+function drawPegamole(pcx, pcy, unit, wingPhase, celebrating){
+  const s = unit * 0.82;
+  ctx.save();
+  ctx.translate(pcx, pcy);
+
+  // Celebration bounce
+  let bounce = 0;
+  if (celebrating) {
+    const t = (performance.now() - state.pegamole.celebrateStart) / 300;
+    bounce = Math.abs(Math.sin(t * Math.PI * 2)) * s * 0.18;
+  }
+  ctx.translate(0, -bounce);
+
+  // Shadow
+  ctx.fillStyle = '#00000025';
+  ctx.beginPath();
+  ctx.ellipse(0, s * 0.36 + bounce, s * 0.3, s * 0.045, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // === WINGS — big white pegasus wings! ===
+  const wingFlap = Math.sin(wingPhase) * 0.55;
+
+  // Draw each wing as layered feather shapes
+  function drawPegasusWing(xOff, yOff, baseAngle, flapAmt, isFar){
+    ctx.save();
+    ctx.translate(xOff, yOff);
+    ctx.rotate(baseAngle - flapAmt);
+
+    const opacity = isFar ? 0.85 : 1;
+
+    // Outer wing shape (largest feather layer)
+    ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+    ctx.strokeStyle = `rgba(200,200,210,${opacity})`;
+    ctx.lineWidth = Math.max(0.8, s * 0.015);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-s*0.15, -s*0.35, -s*0.05, -s*0.55);
+    ctx.quadraticCurveTo(s*0.02, -s*0.58, s*0.08, -s*0.5);
+    ctx.quadraticCurveTo(s*0.12, -s*0.42, s*0.1, -s*0.32);
+    ctx.quadraticCurveTo(s*0.08, -s*0.2, 0, 0);
+    ctx.fill(); ctx.stroke();
+
+    // Middle feather layer
+    ctx.fillStyle = `rgba(240,240,245,${opacity})`;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-s*0.1, -s*0.25, -s*0.02, -s*0.42);
+    ctx.quadraticCurveTo(s*0.04, -s*0.44, s*0.08, -s*0.36);
+    ctx.quadraticCurveTo(s*0.07, -s*0.2, 0, 0);
+    ctx.fill();
+
+    // Inner feather layer
+    ctx.fillStyle = `rgba(230,230,238,${opacity})`;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-s*0.06, -s*0.16, 0, -s*0.28);
+    ctx.quadraticCurveTo(s*0.04, -s*0.3, s*0.06, -s*0.22);
+    ctx.quadraticCurveTo(s*0.04, -s*0.1, 0, 0);
+    ctx.fill();
+
+    // Feather line details
+    ctx.strokeStyle = `rgba(190,190,200,${opacity * 0.6})`;
+    ctx.lineWidth = Math.max(0.5, s * 0.008);
+    for (let f = 0; f < 4; f++){
+      const fy = -s * (0.12 + f * 0.1);
+      ctx.beginPath();
+      ctx.moveTo(-s*0.01, fy);
+      ctx.quadraticCurveTo(s*0.03, fy - s*0.04, s*0.06, fy - s*0.02);
+      ctx.stroke();
     }
 
-    // Floor labels
-    ctx.fillStyle = i > 0 ? '#3A7D3E' : '#B04040';
-    ctx.font = `bold ${Math.max(9, unit * 0.27)}px Fredoka`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(fp(i), shaftX + unit + 5, fy + unit / 2);
+    ctx.restore();
   }
 
-  // Roof at very top only
-  const topY = cy - MAX * unit - unit / 2;
-  ctx.fillStyle = '#8B3A2F';
+  // Far wing (behind body, slightly offset)
+  drawPegasusWing(-s * 0.08, -s * 0.14, -0.3, wingFlap * 0.8, true);
+  // Near wing (in front, main wing)
+  drawPegasusWing(-s * 0.02, -s * 0.16, -0.15, wingFlap, false);
+
+  // === BODY — fat horizontal oval, facing right ===
+  ctx.fillStyle = '#3E2A1A';
   ctx.beginPath();
-  ctx.moveTo(shaftX - unit * 0.12, topY);
-  ctx.lineTo(cx, topY - unit * 0.4);
-  ctx.lineTo(shaftX + unit * 1.12, topY);
+  ctx.ellipse(0, 0, s * 0.33, s * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Fur texture — slightly lighter top
+  ctx.fillStyle = '#4E3828';
+  ctx.beginPath();
+  ctx.ellipse(0, -s * 0.04, s * 0.3, s * 0.12, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  // Belly
+  ctx.fillStyle = '#6B5540';
+  ctx.beginPath();
+  ctx.ellipse(s * 0.02, s * 0.08, s * 0.2, s * 0.1, 0, 0, Math.PI);
+  ctx.fill();
+
+  // === STUBBY TAIL ===
+  ctx.fillStyle = '#4E3828';
+  ctx.beginPath();
+  ctx.ellipse(-s * 0.34, -s * 0.01, s * 0.055, s * 0.03, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // === HEAD — pointy snout facing right ===
+  ctx.fillStyle = '#3E2A1A';
+  ctx.beginPath();
+  ctx.ellipse(s * 0.26, -s * 0.02, s * 0.17, s * 0.15, -0.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Long pointy snout
+  ctx.fillStyle = '#4E3525';
+  ctx.beginPath();
+  ctx.moveTo(s * 0.36, -s * 0.11);
+  ctx.quadraticCurveTo(s * 0.56, -s * 0.1, s * 0.58, -s * 0.05);
+  ctx.quadraticCurveTo(s * 0.54, 0, s * 0.36, s * 0.02);
   ctx.closePath();
   ctx.fill();
 
-  // Ground floor (distinct color, no roof)
-  drawGroundFloor(ctx, shaftX, cy - unit / 2, unit, unit);
-
-  // Elevator tracks
-  ctx.strokeStyle = '#00000018';
-  ctx.lineWidth = 1;
+  // Big pink nose (star-nosed mole style — prominent!)
+  ctx.fillStyle = '#F0908A';
   ctx.beginPath();
-  ctx.moveTo(shaftX + 3, topY);
-  ctx.lineTo(shaftX + 3, cy + MAX * unit + unit);
-  ctx.moveTo(shaftX + unit - 3, topY);
-  ctx.lineTo(shaftX + unit - 3, cy + MAX * unit + unit);
-  ctx.stroke();
+  ctx.arc(s * 0.58, -s * 0.04, s * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  // Nose highlight
+  ctx.fillStyle = '#F8B0A8';
+  ctx.beginPath();
+  ctx.arc(s * 0.575, -s * 0.055, s * 0.02, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Elevator car
-  const elevY = cy - ellie.animPos * unit;
-  ctx.fillStyle = '#99999955';
-  ctx.fillRect(shaftX + 3, elevY - unit / 2 + 3, unit - 6, unit - 6);
-  ctx.strokeStyle = '#aaa';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(shaftX + 3, elevY - unit / 2 + 3, unit - 6, unit - 6);
+  // Tiny squinty eye (moles are nearly blind)
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.ellipse(s * 0.32, -s * 0.08, s * 0.018, s * 0.012, 0, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Ellie
-  drawEllie(ctx, cx, elevY, unit);
+  // Tiny ear bump
+  ctx.fillStyle = '#4E3525';
+  ctx.beginPath();
+  ctx.arc(s * 0.2, -s * 0.15, s * 0.028, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Whiskers
+  ctx.strokeStyle = '#8A7A6A';
+  ctx.lineWidth = Math.max(0.5, s * 0.01);
+  for (let ww = 0; ww < 3; ww++){
+    const wy = -s * 0.04 + ww * s * 0.022;
+    ctx.beginPath();
+    ctx.moveTo(s * 0.42, wy);
+    ctx.lineTo(s * 0.52, wy - s * 0.015 + ww * s * 0.015);
+    ctx.stroke();
+  }
+
+  // === FRONT PAW — BIG shovel paw (THE mole signature) ===
+  ctx.fillStyle = '#5A4030';
+  // Big front digging paw
+  ctx.beginPath();
+  ctx.ellipse(s * 0.18, s * 0.22, s * 0.13, s * 0.065, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // Claw fingers splayed
+  ctx.strokeStyle = '#DDD';
+  ctx.lineWidth = Math.max(1.2, s * 0.025);
+  ctx.lineCap = 'round';
+  const fClaws = [
+    { x: s*0.28, y: s*0.18, dx: s*0.07, dy: -s*0.01 },
+    { x: s*0.3, y: s*0.22, dx: s*0.07, dy: s*0.02 },
+    { x: s*0.28, y: s*0.26, dx: s*0.06, dy: s*0.04 },
+    { x: s*0.24, y: s*0.28, dx: s*0.04, dy: s*0.05 },
+  ];
+  for (const cl of fClaws){
+    ctx.beginPath(); ctx.moveTo(cl.x, cl.y); ctx.lineTo(cl.x+cl.dx, cl.y+cl.dy); ctx.stroke();
+  }
+
+  // Back paw (smaller)
+  ctx.fillStyle = '#5A4030';
+  ctx.beginPath();
+  ctx.ellipse(-s * 0.16, s * 0.22, s * 0.08, s * 0.045, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#DDD';
+  ctx.lineWidth = Math.max(1, s * 0.02);
+  const bClaws = [
+    { x: -s*0.22, y: s*0.2, dx: -s*0.04, dy: -s*0.01 },
+    { x: -s*0.23, y: s*0.23, dx: -s*0.04, dy: s*0.015 },
+    { x: -s*0.21, y: s*0.26, dx: -s*0.03, dy: s*0.03 },
+  ];
+  for (const cl of bClaws){
+    ctx.beginPath(); ctx.moveTo(cl.x, cl.y); ctx.lineTo(cl.x+cl.dx, cl.y+cl.dy); ctx.stroke();
+  }
+
+  // === CELEBRATION STARS ===
+  if (celebrating){
+    const ct = (performance.now() - state.pegamole.celebrateStart) / 1000;
+    ctx.fillStyle = '#FFD700';
+    for (let i = 0; i < 6; i++){
+      const angle = ct * 3 + i * Math.PI * 2 / 6;
+      const dist = s * (0.5 + ct * 0.4);
+      const stx = Math.cos(angle) * dist;
+      const sty = Math.sin(angle) * dist;
+      const starSize = s * 0.07 * Math.max(0, 1 - ct * 0.35);
+      if (starSize > 0) drawStar(stx, sty, starSize);
+    }
+  }
+
+  ctx.restore();
 }
 
-// ===== TAB 2: COMBINED =====
-function drawCombined(ctx, canvas, walker, ellie) {
-  const { w, h } = dims(canvas);
-  const unit = Math.min(w / 23, h / 23, 34);
+function drawStar(x, y, r){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++){
+    const a = (i * 4 * Math.PI / 5) - Math.PI / 2;
+    const method = i === 0 ? 'moveTo' : 'lineTo';
+    ctx[method](Math.cos(a) * r, Math.sin(a) * r);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function getSceneUnit(w, h, rx, ry){
+  return Math.min((w - 10) / (rx * 2 + 1), (h - 10) / (ry * 2 + 1.8));
+}
+
+function draw(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
   const cx = w / 2;
   const cy = h / 2;
+  ctx.clearRect(0, 0, w, h);
 
-  // Sky
-  ctx.fillStyle = '#87CEEB';
-  ctx.fillRect(0, 0, w, cy + unit / 2);
-  // Ground
-  ctx.fillStyle = '#C4A265';
-  ctx.fillRect(0, cy + unit / 2, w, h - cy - unit / 2);
-
-  // Grid
-  ctx.strokeStyle = '#00000010';
-  ctx.lineWidth = 0.5;
-  for (let i = -MAX; i <= MAX; i++) {
-    ctx.beginPath(); ctx.moveTo(cx + i * unit, 0); ctx.lineTo(cx + i * unit, h); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, cy - i * unit); ctx.lineTo(w, cy - i * unit); ctx.stroke();
+  if (state.mode === 'street'){
+    const r = state.zoom.street;
+    const unit = getSceneUnit(w, h, r, r);
+    const roadY = cy - unit / 2;
+    drawSkyGround(w, h, roadY + unit);
+    drawStreetWorld(cx, roadY, unit, r, true);
+    drawWalker(cx + state.walker.animPos * unit, roadY + unit/2 + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
   }
-
-  // Road band
-  ctx.fillStyle = '#55555544';
-  ctx.fillRect(0, cy - unit / 2, w, unit);
-
-  // Yellow dashes
-  ctx.fillStyle = '#E8C84044';
-  for (let i = -MAX; i <= MAX; i++) {
-    if (i === 0 || Math.abs(i) % 2 !== 0) continue;
-    ctx.fillRect(cx + i * unit - unit / 2 + unit * 0.08, cy - unit * 0.07, unit * 0.84, unit * 0.14);
+  else if (state.mode === 'elevator'){
+    const r = state.zoom.elevator;
+    const unit = getSceneUnit(w, h, r, r);
+    drawSkyGround(w, h, cy + unit/2);
+    ctx.fillStyle = C.road;
+    ctx.fillRect(0, cy - unit/2, w, unit);
+    ctx.fillStyle = C.dash;
+    for (let i = -r; i <= r; i++){
+      if (i === 0 || Math.abs(i) % 2 !== 0) continue;
+      const dx = cx + i * unit - unit/2;
+      ctx.fillRect(dx + unit*0.08, cy - unit*0.07, unit*0.84, unit*0.14);
+    }
+    const shaftX = drawElevatorWorld(cx, cy, unit, r, true);
+    const ey = cy - state.ellie.animPos * unit;
+    ctx.fillStyle = '#99999955';
+    ctx.fillRect(shaftX+3, ey - unit/2+3, unit-6, unit-6);
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.4;
+    ctx.strokeRect(shaftX+3, ey - unit/2+3, unit-6, unit-6);
+    drawEllie(cx, ey, unit);
   }
+  else { // both
+    const rx = state.zoom.bothX, ry = state.zoom.bothY;
+    const unit = getSceneUnit(w, h, rx, ry);
+    drawSkyGround(w, h, cy + unit/2);
 
-  // Shaft floors
-  const shaftX = cx - unit / 2;
-  for (let i = -MAX; i <= MAX; i++) {
-    if (i === 0) continue;
-    const fy = cy - i * unit - unit / 2;
-    if (fy > h + unit || fy < -unit) continue;
-    ctx.fillStyle = i > 0 ? '#D4594A1A' : '#7A60501A';
-    ctx.fillRect(shaftX, fy, unit, unit);
+    // Faint grid
+    ctx.strokeStyle = '#00000010'; ctx.lineWidth = 0.5;
+    for (let i = -rx; i <= rx; i++){
+      ctx.beginPath(); ctx.moveTo(cx + i*unit, 0); ctx.lineTo(cx + i*unit, h); ctx.stroke();
+    }
+    for (let i = -ry; i <= ry; i++){
+      ctx.beginPath(); ctx.moveTo(0, cy - i*unit); ctx.lineTo(w, cy - i*unit); ctx.stroke();
+    }
+
+    drawStreetWorld(cx, cy - unit/2, unit, rx, true);
+    const shaftX = drawElevatorWorld(cx, cy, unit, ry, true);
+
+    const wx = cx + state.walker.animPos * unit;
+    const ey = cy - state.ellie.animPos * unit;
+
+    // Pegamole
+    const pm = state.pegamole;
+    if (pm.active){
+      const pmScreenX = cx + pm.x * unit;
+      const pmScreenY = cy - pm.y * unit;
+      drawPegamole(pmScreenX, pmScreenY, unit, pm.wingPhase, pm.celebrating);
+    }
+
+    // Walker & Ellie sticks + intersection
+    if (state.walker.pos !== 0 || state.ellie.pos !== 0){
+      ctx.setLineDash([4, 3]); ctx.lineWidth = 2;
+      ctx.strokeStyle = '#EAEAEA88';
+      ctx.beginPath(); ctx.moveTo(wx, cy); ctx.lineTo(wx, ey); ctx.stroke();
+      ctx.strokeStyle = '#FFD70088';
+      ctx.beginPath(); ctx.moveTo(cx, ey); ctx.lineTo(wx, ey); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Intersection dot (only if no active pegamole game, or if found)
+      if (!pm.active || pm.found){
+        ctx.fillStyle = '#ff4747';
+        ctx.beginPath(); ctx.arc(wx, ey, unit*0.13, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.max(10, unit*0.27)}px Fredoka`;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText(`(${fp(state.walker.pos)}, ${fp(state.ellie.pos)})`, wx + unit*0.18, ey - unit*0.1);
+      }
+    }
+
+    drawWalker(wx, cy + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
+    ctx.fillStyle = '#99999955';
+    ctx.fillRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.2;
+    ctx.strokeRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
+    drawEllie(cx, ey, unit);
   }
-
-  // Axis labels
-  ctx.font = `bold ${Math.max(7, unit * 0.24)}px Fredoka`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  for (let i = -MAX; i <= MAX; i++) {
-    if (i === 0) continue;
-    ctx.fillStyle = i > 0 ? '#3A7D3E' : '#B04040';
-    ctx.fillText(fp(i), cx + i * unit, cy + unit / 2 + 2);
-  }
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  for (let i = -MAX; i <= MAX; i++) {
-    if (i === 0) continue;
-    ctx.fillStyle = i > 0 ? '#3A7D3E' : '#B04040';
-    ctx.fillText(fp(i), cx + unit / 2 + 3, cy - i * unit);
-  }
-
-  // Ground floor
-  drawGroundFloor(ctx, shaftX, cy - unit / 2, unit, unit);
-
-  // Sticks + intersection
-  const ey = cy - ellie.animPos * unit;
-  const wx = cx + walker.animPos * unit;
-
-  if (ellie.pos !== 0 || walker.pos !== 0) {
-    ctx.setLineDash([4, 3]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#FFD70066';
-    ctx.beginPath(); ctx.moveTo(cx, ey); ctx.lineTo(wx, ey); ctx.stroke();
-    ctx.strokeStyle = '#EAEAEA66';
-    ctx.beginPath(); ctx.moveTo(wx, cy); ctx.lineTo(wx, ey); ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Dot
-    ctx.fillStyle = '#FF4444';
-    ctx.beginPath(); ctx.arc(wx, ey, unit * 0.13, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Label
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${Math.max(9, unit * 0.26)}px Fredoka`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(`(${fp(walker.pos)}, ${fp(ellie.pos)})`, wx + unit * 0.18, ey - unit * 0.08);
-  }
-
-  // Walker
-  drawWalker(ctx, wx, cy + unit * 0.08, unit, walker.stepPhase || 0, walker.lastDir || 1);
-
-  // Elevator car + Ellie
-  ctx.fillStyle = '#88888833';
-  ctx.fillRect(shaftX + 2, ey - unit / 2 + 2, unit - 4, unit - 4);
-  drawEllie(ctx, cx, ey, unit);
 }
 
-// ========== INIT ==========
-initCanvases();
-updateUI(0); updateUI(1); updateUI(2, 'x'); updateUI(2, 'y');
-draw();
+setMode('street');
+updatePanelText();
+resize();
 </script>
 </body>
 </html>
