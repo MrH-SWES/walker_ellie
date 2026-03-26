@@ -181,6 +181,131 @@
     font-weight:600;
   }
 
+  /* Quiz panel */
+  .quiz-panel{
+    display:none;
+    flex-direction:column;
+    gap:10px;
+    padding:4px 0;
+    overflow-y:auto;
+  }
+  .quiz-panel.active{ display:flex; }
+
+  .quiz-category-label{
+    font-size:11px;
+    font-weight:600;
+    color:#fff5;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    padding:0 4px;
+  }
+  .quiz-prompt{
+    font-size:17px;
+    font-weight:600;
+    line-height:1.35;
+    color:#fffd;
+    padding:0 4px;
+  }
+  .quiz-choices{
+    display:grid;
+    gap:6px;
+  }
+  .quiz-choice{
+    border:2px solid #5a5a7a;
+    border-radius:10px;
+    padding:12px 14px;
+    font:600 17px 'Fredoka',sans-serif;
+    color:#fff;
+    background:#3a3a50;
+    cursor:pointer;
+    text-align:left;
+    transition:all .12s;
+  }
+  .quiz-choice:hover{ background:#4a4a60; border-color:#7a7a9a; }
+  .quiz-choice.correct{
+    background:#2f7f1f44;
+    border-color:#4CAF50;
+    color:#7FE07F;
+  }
+  .quiz-choice.wrong{
+    background:#d9000033;
+    border-color:#E05555;
+    color:#FF9999;
+  }
+  .quiz-choice:disabled{ cursor:default; }
+  .quiz-choice:disabled:hover{ background:#3a3a50; border-color:#5a5a7a; }
+  .quiz-choice:disabled.correct:hover{ background:#2f7f1f44; border-color:#4CAF50; }
+  .quiz-choice:disabled.wrong:hover{ background:#d9000033; border-color:#E05555; }
+
+  .quiz-feedback{
+    font-size:15px;
+    font-weight:600;
+    padding:8px 10px;
+    border-radius:8px;
+    text-align:center;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .quiz-feedback.right{ background:#2f7f1f33; color:#7FE07F; }
+  .quiz-feedback.wrong{ background:#d9000033; color:#FF9999; }
+
+  .quiz-next{
+    border:0;
+    border-radius:10px;
+    height:44px;
+    font:700 16px 'Fredoka',sans-serif;
+    color:#fff;
+    background:#6e6ea0;
+    cursor:pointer;
+    transition:all .12s;
+  }
+  .quiz-next:hover{ background:#8080b0; }
+
+  .quiz-progress{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:0 4px;
+  }
+  .quiz-progress-bar{
+    flex:1;
+    height:8px;
+    background:#2a2a3a;
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .quiz-progress-fill{
+    height:100%;
+    background:#6e6ea0;
+    border-radius:4px;
+    transition:width 0.3s;
+  }
+  .quiz-score-text{
+    font-size:13px;
+    color:#fff9;
+    white-space:nowrap;
+  }
+
+  .quiz-topic-btns{
+    display:grid;
+    gap:5px;
+  }
+  .topic-btn{
+    border:2px solid #5a5a7a;
+    border-radius:10px;
+    padding:10px 12px;
+    font:600 14px 'Fredoka',sans-serif;
+    color:#fffc;
+    background:#3a3a50;
+    cursor:pointer;
+    text-align:left;
+    transition:all .12s;
+  }
+  .topic-btn:hover{ background:#4a4a60; border-color:#7a7a9a; }
+  .topic-btn .topic-emoji{ margin-right:6px; }
+
   .stage{
     height:100%;
     display:flex;
@@ -225,9 +350,10 @@
       <button id="btnStreet" class="view-btn active" onclick="setMode('street')">🚶 Street</button>
       <button id="btnElevator" class="view-btn" onclick="setMode('elevator')">🛗 Elevator</button>
       <button id="btnBoth" class="view-btn" onclick="setMode('both')">📍 Both</button>
+      <button id="btnQuiz" class="view-btn" onclick="setMode('quiz')">🧠 Activities</button>
     </div>
 
-    <div class="center-controls">
+    <div class="center-controls" id="mainControls">
       <div>
         <div class="compass">
           <button id="upBtn" class="arrow up pos" onclick="pressUp()">+1</button>
@@ -237,6 +363,22 @@
           <button id="downBtn" class="arrow down neg" onclick="pressDown()">-1</button>
         </div>
         <div id="status" class="status">Walker: 0 | Ellie: 0 | Point: (0, 0)</div>
+      </div>
+    </div>
+
+    <!-- Quiz panel -->
+    <div class="quiz-panel" id="quizPanel">
+      <div id="quizTopicSelect" class="quiz-topic-btns"></div>
+      <div id="quizActive" style="display:none;">
+        <div class="quiz-progress" style="margin-bottom:8px;">
+          <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill"></div></div>
+          <div class="quiz-score-text" id="quizScoreText">0/0</div>
+        </div>
+        <div class="quiz-category-label" id="quizCategoryLabel"></div>
+        <div class="quiz-prompt" id="quizPrompt" style="margin:8px 0;"></div>
+        <div class="quiz-choices" id="quizChoices"></div>
+        <div class="quiz-feedback" id="quizFeedback" style="display:none;"></div>
+        <button class="quiz-next" id="quizNextBtn" style="display:none;margin-top:8px;" onclick="quizNext()">Next Question →</button>
       </div>
     </div>
 
@@ -317,7 +459,12 @@ function setMode(mode){
   document.getElementById('btnStreet').classList.toggle('active', mode === 'street');
   document.getElementById('btnElevator').classList.toggle('active', mode === 'elevator');
   document.getElementById('btnBoth').classList.toggle('active', mode === 'both');
+  document.getElementById('btnQuiz').classList.toggle('active', mode === 'quiz');
   document.getElementById('pegamoleControls').style.display = mode === 'both' ? 'block' : 'none';
+  document.getElementById('mainControls').style.display = mode === 'quiz' ? 'none' : '';
+  document.getElementById('quizPanel').classList.toggle('active', mode === 'quiz');
+  document.querySelector('.zoom').style.display = mode === 'quiz' ? 'none' : '';
+  if (mode === 'quiz') showTopicSelect();
   refreshArrowState();
   updatePanelText();
   draw();
@@ -334,28 +481,50 @@ function refreshArrowState(){
 
 function animateTo(ch, target){
   if (ch.animating) return;
-  ch.animating = true;
-  if ('lastDir' in ch) ch.lastDir = target >= ch.animPos ? 1 : -1;
-  const start = ch.animPos;
-  const t0 = performance.now();
+  const start = Math.round(ch.animPos);
   const dist = Math.abs(target - start);
-  const dur = Math.min(900, 220 + dist * 70);
-  function step(now){
-    const t = Math.min((now - t0) / dur, 1);
-    const e = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-    ch.animPos = start + (target - start) * e;
-    if ('stepPhase' in ch) ch.stepPhase = Math.abs(Math.sin(t * Math.PI * Math.max(1, dist)));
-    draw();
-    if (t < 1) requestAnimationFrame(step);
-    else {
+  if (dist === 0) { ch.animPos = target; draw(); checkPegamoleFound(); return; }
+
+  ch.animating = true;
+  if ('lastDir' in ch) ch.lastDir = target > start ? 1 : -1;
+  const dir = target > start ? 1 : -1;
+
+  let currentStep = 0;
+
+  function walkOneStep(){
+    if (currentStep >= dist){
       ch.animPos = target;
       ch.animating = false;
       if ('stepPhase' in ch) ch.stepPhase = 0;
       draw();
       checkPegamoleFound();
+      return;
     }
+
+    const from = start + currentStep * dir;
+    const to = from + dir;
+    const stepStart = performance.now();
+    const stepDur = 350; // ms per step — deliberate cadence
+
+    function tick(now){
+      const t = Math.min((now - stepStart) / stepDur, 1);
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      ch.animPos = from + dir * ease;
+      if ('stepPhase' in ch) ch.stepPhase = Math.sin(t * Math.PI);
+      draw();
+      if (t < 1) requestAnimationFrame(tick);
+      else {
+        ch.animPos = to;
+        if ('stepPhase' in ch) ch.stepPhase = 0;
+        currentStep++;
+        // Small pause between steps
+        setTimeout(walkOneStep, 80);
+      }
+    }
+    requestAnimationFrame(tick);
   }
-  requestAnimationFrame(step);
+
+  walkOneStep();
 }
 
 function nudge(ch, dir){
@@ -543,7 +712,7 @@ function drawStreetWorld(cx, roadY, unit, range, showLabels){
   }
   drawHouseWithRoof(cx - unit / 2, roadY, unit, roadH);
   if (showLabels){
-    ctx.font = `bold ${Math.max(9, unit * 0.28)}px Fredoka`;
+    ctx.font = `bold ${Math.max(12, unit * 0.4)}px Fredoka`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     for (let i = -range; i <= range; i++){
       if (i === 0) continue;
@@ -569,7 +738,7 @@ function drawElevatorWorld(cx, cy, unit, range, showLabels){
     }
     if (showLabels){
       ctx.fillStyle = i > 0 ? C.pos : C.neg;
-      ctx.font = `bold ${Math.max(9, unit*0.27)}px Fredoka`;
+      ctx.font = `bold ${Math.max(12, unit*0.38)}px Fredoka`;
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.fillText(fp(i), shaftX + unit + 5, fy + unit/2);
     }
@@ -914,67 +1083,545 @@ function draw(){
     ctx.strokeRect(shaftX+3, ey - unit/2+3, unit-6, unit-6);
     drawEllie(cx, ey, unit);
   }
-  else { // both
-    const rx = state.zoom.bothX, ry = state.zoom.bothY;
-    const unit = getSceneUnit(w, h, rx, ry);
-    drawSkyGround(w, h, cy + unit/2);
+  else if (state.mode === 'both' || state.mode === 'quiz') {
+    // Quiz mode uses the "both" viz but picks street/elevator/both based on question
+    const quizViz = (state.mode === 'quiz' && quiz.currentQ) ? quiz.currentQ.viz : 'both';
 
-    // Faint grid
-    ctx.strokeStyle = '#00000010'; ctx.lineWidth = 0.5;
-    for (let i = -rx; i <= rx; i++){
-      ctx.beginPath(); ctx.moveTo(cx + i*unit, 0); ctx.lineTo(cx + i*unit, h); ctx.stroke();
-    }
-    for (let i = -ry; i <= ry; i++){
-      ctx.beginPath(); ctx.moveTo(0, cy - i*unit); ctx.lineTo(w, cy - i*unit); ctx.stroke();
-    }
+    if (quizViz === 'street') {
+      const r = state.zoom.street;
+      const unit = getSceneUnit(w, h, r, r);
+      const roadY = cy - unit / 2;
+      drawSkyGround(w, h, roadY + unit);
+      drawStreetWorld(cx, roadY, unit, r, true);
 
-    drawStreetWorld(cx, cy - unit/2, unit, rx, true);
-    const shaftX = drawElevatorWorld(cx, cy, unit, ry, true);
-
-    const wx = cx + state.walker.animPos * unit;
-    const ey = cy - state.ellie.animPos * unit;
-
-    // Pegamole
-    const pm = state.pegamole;
-    if (pm.active){
-      const pmScreenX = cx + pm.x * unit;
-      const pmScreenY = cy - pm.y * unit;
-      drawPegamole(pmScreenX, pmScreenY, unit, pm.wingPhase, pm.celebrating);
-    }
-
-    // Walker & Ellie sticks + intersection
-    if (state.walker.pos !== 0 || state.ellie.pos !== 0){
-      ctx.setLineDash([4, 3]); ctx.lineWidth = 2;
-      ctx.strokeStyle = '#EAEAEA88';
-      ctx.beginPath(); ctx.moveTo(wx, cy); ctx.lineTo(wx, ey); ctx.stroke();
-      ctx.strokeStyle = '#FFD70088';
-      ctx.beginPath(); ctx.moveTo(cx, ey); ctx.lineTo(wx, ey); ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Intersection dot (only if no active pegamole game, or if found)
-      if (!pm.active || pm.found){
-        ctx.fillStyle = '#ff4747';
-        ctx.beginPath(); ctx.arc(wx, ey, unit*0.13, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = `bold ${Math.max(10, unit*0.27)}px Fredoka`;
-        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-        ctx.fillText(`(${fp(state.walker.pos)}, ${fp(state.ellie.pos)})`, wx + unit*0.18, ey - unit*0.1);
+      // Pegamole on the street (for distance/comparison questions)
+      if(state.mode === 'quiz' && quiz.pegamoleX !== null){
+        const pmX = cx + quiz.pegamoleX * unit;
+        const pmY = roadY + unit/2 + unit*0.08;
+        const wph = (performance.now() / 200) % (Math.PI * 2);
+        drawPegamole(pmX, pmY, unit * 0.85, wph, false);
       }
-    }
 
-    drawWalker(wx, cy + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
-    ctx.fillStyle = '#99999955';
-    ctx.fillRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
-    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.2;
-    ctx.strokeRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
-    drawEllie(cx, ey, unit);
+      drawWalker(cx + state.walker.animPos * unit, roadY + unit/2 + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
+
+      // Distance bracket
+      if(state.mode === 'quiz' && quiz.showDistanceBracket && quiz.currentQ && quiz.currentQ.distA !== undefined){
+        const q = quiz.currentQ;
+        const ax = cx + q.distA * unit;
+        const bx = cx + q.distB * unit;
+        const bracketY = roadY + unit + unit*0.55;
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        // Horizontal line
+        ctx.beginPath(); ctx.moveTo(ax, bracketY); ctx.lineTo(bx, bracketY); ctx.stroke();
+        // End ticks
+        ctx.beginPath(); ctx.moveTo(ax, bracketY - unit*0.12); ctx.lineTo(ax, bracketY + unit*0.12); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx, bracketY - unit*0.12); ctx.lineTo(bx, bracketY + unit*0.12); ctx.stroke();
+        // Distance label
+        ctx.fillStyle = '#FFD700';
+        ctx.font = `bold ${Math.max(11, unit*0.3)}px Fredoka`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(`${q.distanceAnswer} steps`, (ax+bx)/2, bracketY + unit*0.15);
+      }
+    } else if (quizViz === 'elevator') {
+      const r = state.zoom.elevator;
+      const unit = getSceneUnit(w, h, r, r);
+      drawSkyGround(w, h, cy + unit/2);
+      ctx.fillStyle = C.road;
+      ctx.fillRect(0, cy - unit/2, w, unit);
+      ctx.fillStyle = C.dash;
+      for (let i = -r; i <= r; i++){
+        if (i === 0 || Math.abs(i) % 2 !== 0) continue;
+        const dx = cx + i * unit - unit/2;
+        ctx.fillRect(dx + unit*0.08, cy - unit*0.07, unit*0.84, unit*0.14);
+      }
+      const shaftX = drawElevatorWorld(cx, cy, unit, r, true);
+      const ey = cy - state.ellie.animPos * unit;
+      ctx.fillStyle = '#99999955';
+      ctx.fillRect(shaftX+3, ey - unit/2+3, unit-6, unit-6);
+      ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.4;
+      ctx.strokeRect(shaftX+3, ey - unit/2+3, unit-6, unit-6);
+      drawEllie(cx, ey, unit);
+    } else {
+      // Both view
+      const rx = state.zoom.bothX, ry = state.zoom.bothY;
+      const unit = getSceneUnit(w, h, rx, ry);
+      drawSkyGround(w, h, cy + unit/2);
+
+      ctx.strokeStyle = '#00000010'; ctx.lineWidth = 0.5;
+      for (let i = -rx; i <= rx; i++){
+        ctx.beginPath(); ctx.moveTo(cx + i*unit, 0); ctx.lineTo(cx + i*unit, h); ctx.stroke();
+      }
+      for (let i = -ry; i <= ry; i++){
+        ctx.beginPath(); ctx.moveTo(0, cy - i*unit); ctx.lineTo(w, cy - i*unit); ctx.stroke();
+      }
+
+      drawStreetWorld(cx, cy - unit/2, unit, rx, true);
+      const shaftX = drawElevatorWorld(cx, cy, unit, ry, true);
+
+      const wx = cx + state.walker.animPos * unit;
+      const ey = cy - state.ellie.animPos * unit;
+
+      // Pegamole (non-quiz both mode — the find game)
+      const pm = state.pegamole;
+      if (state.mode !== 'quiz' && pm.active){
+        const pmScreenX = cx + pm.x * unit;
+        const pmScreenY = cy - pm.y * unit;
+        drawPegamole(pmScreenX, pmScreenY, unit, pm.wingPhase, pm.celebrating);
+      }
+
+      // Quiz mode: Pegamole at the correct answer point (after answering)
+      if (state.mode === 'quiz' && quiz.showPegamoleAtAnswer && quiz.pegamoleAnswerX !== null){
+        const pmX = cx + quiz.pegamoleAnswerX * unit;
+        const pmY = cy - quiz.pegamoleAnswerY * unit;
+        const wph = (performance.now() / 200) % (Math.PI * 2);
+        drawPegamole(pmX, pmY, unit, wph, false);
+      }
+
+      if (state.walker.pos !== 0 || state.ellie.pos !== 0){
+        ctx.setLineDash([4, 3]); ctx.lineWidth = 2;
+        ctx.strokeStyle = '#EAEAEA88';
+        ctx.beginPath(); ctx.moveTo(wx, cy); ctx.lineTo(wx, ey); ctx.stroke();
+        ctx.strokeStyle = '#FFD70088';
+        ctx.beginPath(); ctx.moveTo(cx, ey); ctx.lineTo(wx, ey); ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (!pm.active || pm.found || state.mode === 'quiz'){
+          // Don't show the red dot if Pegamole is at the answer point — Pegamole IS the dot
+          if(!(state.mode === 'quiz' && quiz.showPegamoleAtAnswer)){
+            ctx.fillStyle = '#ff4747';
+            ctx.beginPath(); ctx.arc(wx, ey, unit*0.13, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.stroke();
+          }
+          ctx.fillStyle = '#fff';
+          ctx.font = `bold ${Math.max(10, unit*0.27)}px Fredoka`;
+          ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+          ctx.fillText(`(${fp(state.walker.pos)}, ${fp(state.ellie.pos)})`, wx + unit*0.18, ey - unit*0.1);
+        }
+      }
+
+      drawWalker(wx, cy + unit*0.08, unit, state.walker.stepPhase, state.walker.lastDir);
+      ctx.fillStyle = '#99999955';
+      ctx.fillRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
+      ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.2;
+      ctx.strokeRect(shaftX+2, ey - unit/2+2, unit-4, unit-4);
+      drawEllie(cx, ey, unit);
+    }
   }
 }
 
 setMode('street');
 updatePanelText();
 resize();
+
+// ========== QUIZ ENGINE ==========
+function ri(lo, hi){ return Math.floor(Math.random()*(hi-lo+1))+lo; }
+function riNZ(lo, hi){ let n; do { n = ri(lo,hi); } while(n===0); return n; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]; } return a; }
+function makeChoices(correct, count=4){
+  const choices = new Set([correct]);
+  let tries = 0;
+  while(choices.size < count && tries < 50){
+    let c = correct + ri(-3,3);
+    if(c !== correct) choices.add(c);
+    tries++;
+  }
+  while(choices.size < count) choices.add(correct + choices.size * (Math.random()>0.5?1:-1));
+  return shuffle([...choices]);
+}
+function makeChoicesStr(correct, pool){
+  const choices = new Set([correct]);
+  for(const p of shuffle([...pool])){ if(choices.size >= 4) break; if(p !== correct) choices.add(p); }
+  return shuffle([...choices]);
+}
+
+const quizTopics = [
+  {
+    id:'walk_basic', emoji:'🚶', name:'Where does Walker end up?',
+    desc:'Walk forward or backward from a position',
+    gen(){
+      const start = ri(-7,7);
+      const steps = ri(1,8);
+      const fwd = Math.random()>0.5;
+      const answer = fwd ? start + steps : start - steps;
+      const dir = fwd ? 'forward' : 'backward';
+      const fromText = start === 0 ? 'home (0)' : fp(start);
+      return {
+        prompt:`Walker is at ${fromText} and walks ${steps} step${steps!==1?'s':''} ${dir}. Where is he?`,
+        answer, choices:makeChoices(answer), hint:`Forward = positive (+), backward = negative (−). Start at ${fp(start)} and count ${steps} ${dir}.`,
+        viz:'street',
+        vizStart:{walker:start, ellie:0},
+        vizEnd:{walker:answer}
+      };
+    }
+  },
+  {
+    id:'cross_zero', emoji:'🔄', name:'Crossing zero',
+    desc:'Walk from a position and cross home',
+    gen(){
+      const start = riNZ(-8,8);
+      const steps = ri(Math.abs(start)+1, Math.abs(start)+5);
+      const backward = start > 0;
+      const answer = backward ? start - steps : start + steps;
+      const dir = backward ? 'backward' : 'forward';
+      return {
+        prompt:`Walker is at ${fp(start)}. He walks ${steps} steps ${dir}. Where does he end up?`,
+        answer, choices:makeChoices(answer), hint:`He passes right through home (0) and keeps going!`,
+        viz:'street',
+        vizStart:{walker:start, ellie:0},
+        vizEnd:{walker:answer}
+      };
+    }
+  },
+  {
+    id:'further_from_home', emoji:'📏', name:'Who\'s further from home?',
+    desc:'Compare distances regardless of direction',
+    gen(){
+      const a = riNZ(-9,9);
+      let b; do { b = riNZ(-9,9); } while(Math.abs(b)===Math.abs(a));
+      const aAbs = Math.abs(a), bAbs = Math.abs(b);
+      const winner = aAbs > bAbs ? a : b;
+      const answer = fp(winner);
+      return {
+        prompt:`Is ${fp(a)} or ${fp(b)} further from home?`,
+        answer, choices:shuffle([fp(a), fp(b)]), choicesAreStrings:true,
+        hint:`Ignore the + or −. Count how many steps from zero.`,
+        viz:'street',
+        vizStart:{walker:a, ellie:0, pegamoleX:b},
+        vizEnd:{walker:winner, pegamoleX:winner === a ? b : a},
+        showPegamoleOnStreet:true, pegamoleLabel:true
+      };
+    }
+  },
+  {
+    id:'how_far_apart', emoji:'↔️', name:'How far apart?',
+    desc:'Distance between two positions',
+    gen(){
+      const a = ri(-8,8);
+      let b; do { b = ri(-8,8); } while(b===a);
+      const answer = Math.abs(a-b);
+      const uniq = [...new Set(makeChoices(answer).map(c=>Math.abs(c)||1))];
+      while(uniq.length<4) uniq.push(answer + uniq.length);
+      return {
+        prompt:`Walker is at ${fp(a)}. Pegamole is at ${fp(b)}. How many steps between them?`,
+        answer, choices:shuffle(uniq.slice(0,4)),
+        hint:`Count the steps from one to the other — direction doesn't matter for distance.`,
+        viz:'street',
+        vizStart:{walker:a, ellie:0, pegamoleX:b},
+        vizEnd:{walker:a, pegamoleX:b},
+        showPegamoleOnStreet:true, showDistanceBracket:true, distanceAnswer:answer,
+        distA:a, distB:b
+      };
+    }
+  },
+  {
+    id:'elevator_basic', emoji:'🛗', name:'Ellie\'s elevator',
+    desc:'Ride up or down from a floor',
+    gen(){
+      const start = ri(-7,7);
+      const ride = riNZ(-5,5);
+      const answer = start + ride;
+      const dir = ride > 0 ? 'up' : 'down';
+      return {
+        prompt:`Ellie is on floor ${fp(start)}. She rides ${dir} ${Math.abs(ride)} floor${Math.abs(ride)!==1?'s':''}. What floor is she on now?`,
+        answer, choices:makeChoices(answer), hint:`Up = add, down = subtract.`,
+        viz:'elevator',
+        vizStart:{walker:0, ellie:start},
+        vizEnd:{ellie:answer}
+      };
+    }
+  },
+  {
+    id:'find_point', emoji:'📍', name:'Find the point',
+    desc:'Walker walks, Ellie rides — where is Pegamole?',
+    gen(){
+      const x = riNZ(-8,8), y = riNZ(-8,8);
+      const xDir = x > 0 ? 'forward' : 'backward';
+      const yDir = y > 0 ? 'up' : 'down';
+      const answer = `(${fp(x)}, ${fp(y)})`;
+      const wrong1 = `(${fp(y)}, ${fp(x)})`;
+      const wrong2 = `(${fp(-x)}, ${fp(y)})`;
+      const wrong3 = `(${fp(x)}, ${fp(-y)})`;
+      return {
+        prompt:`Walker walks ${Math.abs(x)} step${Math.abs(x)!==1?'s':''} ${xDir}. Ellie rides ${Math.abs(y)} floor${Math.abs(y)!==1?'s':''} ${yDir}. Where is Pegamole?`,
+        answer, choices:shuffle([...new Set([answer, wrong1, wrong2, wrong3])]).slice(0,4),
+        choicesAreStrings:true,
+        hint:`Forward = +, backward = −. Up = +, down = −. The point is (${fp(x)}, ${fp(y)}).`,
+        viz:'both',
+        vizStart:{walker:0, ellie:0},
+        vizEnd:{walker:x, ellie:y},
+        showPegamoleAtAnswer:true,
+        pegamoleAnswerX:x, pegamoleAnswerY:y
+      };
+    }
+  },
+  {
+    id:'above_or_below', emoji:'🌍', name:'Above or below ground?',
+    desc:'Figure out which quadrant a point is in',
+    gen(){
+      const x = riNZ(-9,9), y = riNZ(-9,9);
+      const horiz = x > 0 ? 'right of home' : 'left of home';
+      const vert = y > 0 ? 'above ground' : 'below ground';
+      const answer = `${vert}, ${horiz}`;
+      const choices = shuffle([
+        'above ground, right of home',
+        'above ground, left of home',
+        'below ground, right of home',
+        'below ground, left of home'
+      ]);
+      return {
+        prompt:`Pegamole is at (${fp(x)}, ${fp(y)}). Is he above or below ground? Left or right of home?`,
+        answer, choices, choicesAreStrings:true,
+        hint:`Positive y = above ground. Positive x = right of home.`,
+        viz:'both',
+        vizStart:{walker:0, ellie:0},
+        vizEnd:{walker:x, ellie:y}
+      };
+    }
+  },
+  {
+    id:'reflection', emoji:'🪞', name:'Mirror image',
+    desc:'Reflect across an axis',
+    gen(){
+      const x = riNZ(-7,7), y = riNZ(-7,7);
+      const flipY = Math.random()>0.5;
+      let answer, prompt;
+      if(flipY){
+        answer = `(${fp(x)}, ${fp(-y)})`;
+        const context = y > 0 ? 'burrowing underground to the same depth' : 'flying up to the same height';
+        prompt = `Pegamole is at (${fp(x)}, ${fp(y)}). He ${context}. What are his new coordinates?`;
+      } else {
+        answer = `(${fp(-x)}, ${fp(y)})`;
+        const context = x > 0 ? 'to the same distance left of home' : 'to the same distance right of home';
+        prompt = `Pegamole is at (${fp(x)}, ${fp(y)}). He moves ${context}. New coordinates?`;
+      }
+      const wrong1 = `(${fp(-x)}, ${fp(-y)})`;
+      const wrong2 = `(${fp(x)}, ${fp(y)})`;
+      const wrong3 = flipY ? `(${fp(-x)}, ${fp(y)})` : `(${fp(x)}, ${fp(-y)})`;
+      return {
+        prompt, answer, choices:shuffle([...new Set([answer,wrong1,wrong2,wrong3])]).slice(0,4),
+        choicesAreStrings:true,
+        hint:flipY ? `Only the floor (y) changes sign — the street position stays the same.`
+                    : `Only the street position (x) changes sign — the floor stays the same.`,
+        viz:'both',
+        vizStart:{walker:x, ellie:y},
+        vizEnd:{walker: flipY?x:-x, ellie: flipY?-y:y}
+      };
+    }
+  },
+  {
+    id:'return_trip', emoji:'🏠', name:'How far from home?',
+    desc:'Steps needed to return to zero',
+    gen(){
+      const pos = riNZ(-9,9);
+      const answer = Math.abs(pos);
+      const who = Math.random()>0.5 ? 'Walker' : 'Ellie';
+      const where = who === 'Walker' ? `at position ${fp(pos)}` : `on floor ${fp(pos)}`;
+      const isW = who==='Walker';
+      return {
+        prompt:`${who} is ${where}. How many steps to get home?`,
+        answer, choices:makeChoices(answer).map(c=>Math.abs(c)||1),
+        hint:`Count the steps from ${fp(pos)} back to 0. Direction doesn't matter — just the distance.`,
+        viz: isW?'street':'elevator',
+        vizStart: isW?{walker:pos, ellie:0}:{walker:0, ellie:pos},
+        vizEnd: isW?{walker:0}:{ellie:0}
+      };
+    }
+  },
+  {
+    id:'multi_step', emoji:'🔢', name:'Multi-step journey',
+    desc:'Follow multiple moves and find the end',
+    gen(){
+      const who = Math.random()>0.5 ? 'Walker' : 'Ellie';
+      const m1 = riNZ(-6,6), m2 = riNZ(-6,6), m3 = riNZ(-4,4);
+      const answer = m1 + m2 + m3;
+      function desc(n, isWalker){
+        if(isWalker) return n>0 ? `${n} steps forward` : `${-n} steps backward`;
+        return n>0 ? `${n} floors up` : `${-n} floors down`;
+      }
+      const isW = who==='Walker';
+      return {
+        prompt:`${who} starts at home. Goes ${desc(m1,isW)}, then ${desc(m2,isW)}, then ${desc(m3,isW)}. Where does ${isW?'he':'she'} end up?`,
+        answer, choices:makeChoices(answer),
+        hint:`Add them up step by step: 0 ${m1>=0?'+'+m1:m1} ${m2>=0?'+'+m2:''+m2} ${m3>=0?'+'+m3:''+m3} = ?`,
+        viz: isW?'street':'elevator',
+        vizStart: isW?{walker:0, ellie:0}:{walker:0, ellie:0},
+        vizEnd: isW?{walker:answer}:{ellie:answer}
+      };
+    }
+  }
+];
+
+// Quiz state
+const quiz = {
+  active: false,
+  topicId: null,
+  qNum: 0,
+  total: 8,
+  correct: 0,
+  currentQ: null,
+  answered: false,
+  pegamoleX: null // for street-level pegamole display
+};
+
+function showTopicSelect(){
+  quiz.active = false;
+  quiz.pegamoleX = null;
+  document.getElementById('quizActive').style.display = 'none';
+  const container = document.getElementById('quizTopicSelect');
+  container.style.display = '';
+  container.innerHTML = quizTopics.map(t =>
+    `<button class="topic-btn" onclick="startQuiz('${t.id}')">
+      <span class="topic-emoji">${t.emoji}</span>${t.name}
+      <br><span style="font-size:12px;font-weight:500;opacity:0.6;">${t.desc}</span>
+    </button>`
+  ).join('');
+  // Reset positions
+  state.walker.pos = 0; state.walker.animPos = 0;
+  state.ellie.pos = 0; state.ellie.animPos = 0;
+  draw();
+}
+
+function startQuiz(topicId){
+  quiz.active = true;
+  quiz.topicId = topicId;
+  quiz.qNum = 0;
+  quiz.correct = 0;
+  quiz.total = 8;
+  document.getElementById('quizTopicSelect').style.display = 'none';
+  document.getElementById('quizActive').style.display = '';
+  const topic = quizTopics.find(t=>t.id===topicId);
+  document.getElementById('quizCategoryLabel').textContent = topic.emoji + ' ' + topic.name;
+  quizNext();
+}
+
+function quizNext(){
+  quiz.qNum++;
+  if(quiz.qNum > quiz.total){
+    const pct = Math.round(quiz.correct/quiz.total*100);
+    document.getElementById('quizPrompt').textContent = '';
+    document.getElementById('quizChoices').innerHTML = '';
+    document.getElementById('quizFeedback').style.display = '';
+    document.getElementById('quizFeedback').className = 'quiz-feedback ' + (pct >= 70 ? 'right' : 'wrong');
+    document.getElementById('quizFeedback').innerHTML = pct >= 70
+      ? `🎉 ${quiz.correct}/${quiz.total} correct (${pct}%)! Great job!`
+      : `${quiz.correct}/${quiz.total} correct (${pct}%). Keep practicing!`;
+    document.getElementById('quizNextBtn').style.display = '';
+    document.getElementById('quizNextBtn').textContent = '← Back to Topics';
+    document.getElementById('quizNextBtn').onclick = () => {
+      document.getElementById('quizNextBtn').onclick = quizNext;
+      showTopicSelect();
+    };
+    quiz.pegamoleX = null;
+    return;
+  }
+
+  quiz.answered = false;
+  const topic = quizTopics.find(t=>t.id===quiz.topicId);
+  quiz.currentQ = topic.gen();
+  const q = quiz.currentQ;
+
+  // Update progress
+  document.getElementById('quizProgressFill').style.width = `${((quiz.qNum-1)/quiz.total)*100}%`;
+  document.getElementById('quizScoreText').textContent = `${quiz.correct}/${quiz.qNum-1}`;
+
+  // Show question
+  document.getElementById('quizPrompt').textContent = q.prompt;
+  document.getElementById('quizFeedback').style.display = 'none';
+  document.getElementById('quizNextBtn').style.display = 'none';
+  document.getElementById('quizNextBtn').textContent = 'Next Question →';
+  document.getElementById('quizNextBtn').onclick = quizNext;
+
+  const isStr = q.choicesAreStrings;
+  const choicesHTML = q.choices.map((c, i) => {
+    const label = isStr ? c : fp(c);
+    return `<button class="quiz-choice" onclick="quizAnswer(this, ${isStr ? `'${c.replace(/'/g,"\\'")}'` : c})">${label}</button>`;
+  }).join('');
+  document.getElementById('quizChoices').innerHTML = choicesHTML;
+
+  // ---- PHASE 1: Snap to starting position (no animation) ----
+  quiz.pegamoleX = q.vizStart.pegamoleX !== undefined ? q.vizStart.pegamoleX : (q.showPegamoleOnStreet ? q.vizStart.pegamoleX : null);
+  if(q.vizStart.pegamoleX !== undefined) quiz.pegamoleX = q.vizStart.pegamoleX;
+  else if(q.showPegamoleOnStreet && q.vizEnd.pegamoleX !== undefined) quiz.pegamoleX = q.vizEnd.pegamoleX;
+  else quiz.pegamoleX = null;
+
+  quiz.showDistanceBracket = false;
+  quiz.showPegamoleAtAnswer = false;
+  quiz.pegamoleAnswerX = null;
+  quiz.pegamoleAnswerY = null;
+
+  const ws = q.vizStart.walker !== undefined ? q.vizStart.walker : 0;
+  const es = q.vizStart.ellie !== undefined ? q.vizStart.ellie : 0;
+  state.walker.pos = ws;
+  state.walker.animPos = ws;
+  state.walker.animating = false;
+  state.walker.stepPhase = 0;
+  state.ellie.pos = es;
+  state.ellie.animPos = es;
+  state.ellie.animating = false;
+  draw();
+}
+
+function quizAnswer(btn, value){
+  if(quiz.answered) return;
+  quiz.answered = true;
+  const q = quiz.currentQ;
+  const isStr = q.choicesAreStrings;
+  const correct = isStr ? String(value) === String(q.answer) : value === q.answer;
+
+  if(correct) quiz.correct++;
+
+  // Highlight buttons
+  const btns = document.querySelectorAll('.quiz-choice');
+  btns.forEach(b => {
+    b.disabled = true;
+    const bVal = b.textContent;
+    const aLabel = isStr ? q.answer : fp(q.answer);
+    if(bVal === aLabel) b.classList.add('correct');
+  });
+  if(!correct) btn.classList.add('wrong');
+
+  // Feedback
+  const fb = document.getElementById('quizFeedback');
+  fb.style.display = '';
+  if(correct){
+    fb.className = 'quiz-feedback right';
+    fb.textContent = '✓ Correct!';
+  } else {
+    fb.className = 'quiz-feedback wrong';
+    const aLabel = isStr ? q.answer : fp(q.answer);
+    fb.innerHTML = `✗ The answer is <strong>${aLabel}</strong>. ${q.hint}`;
+  }
+
+  document.getElementById('quizNextBtn').style.display = '';
+  document.getElementById('quizScoreText').textContent = `${quiz.correct}/${quiz.qNum}`;
+  document.getElementById('quizProgressFill').style.width = `${(quiz.qNum/quiz.total)*100}%`;
+
+  // ---- PHASE 2: Animate to ending (answer) position ----
+  if(q.vizEnd){
+    if(q.vizEnd.walker !== undefined){
+      state.walker.pos = q.vizEnd.walker;
+      animateTo(state.walker, q.vizEnd.walker);
+    }
+    if(q.vizEnd.ellie !== undefined){
+      state.ellie.pos = q.vizEnd.ellie;
+      animateTo(state.ellie, q.vizEnd.ellie);
+    }
+  }
+
+  // Show distance bracket after answer for distance questions
+  if(q.showDistanceBracket) quiz.showDistanceBracket = true;
+
+  // Show Pegamole at the correct answer point
+  if(q.showPegamoleAtAnswer){
+    quiz.showPegamoleAtAnswer = true;
+    quiz.pegamoleAnswerX = q.pegamoleAnswerX;
+    quiz.pegamoleAnswerY = q.pegamoleAnswerY;
+  }
+
+  draw();
+}
 </script>
 </body>
 </html>
