@@ -442,6 +442,8 @@ const ctx = canvas.getContext('2d');
 let wingAnimFrame = null;
 
 function fp(n){ return n === 0 ? '0' : (n > 0 ? '+' + n : '' + n); }
+// Axis labels: no + sign on positives, just the number
+function axl(n){ return '' + n; }
 function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 
 function resize(){
@@ -710,15 +712,15 @@ function checkPegamoleFound(){
 function updatePanelText(){
   const w = state.walker.pos;
   const e = state.ellie.pos;
-  document.getElementById('status').textContent = `Walker: ${fp(w)} | Ellie: ${fp(e)} | Point: (${fp(w)}, ${fp(e)})`;
+  document.getElementById('status').textContent = `Walker: ${axl(w)} | Ellie: ${axl(e)} | Point: (${axl(w)}, ${axl(e)})`;
 
   let txt;
   if (state.mode === 'street') {
-    txt = `View: ${-state.zoom.street}..+${state.zoom.street}`;
+    txt = `View: -${state.zoom.street}..${state.zoom.street}`;
   } else if (state.mode === 'elevator') {
-    txt = `View: ${-state.zoom.elevator}..+${state.zoom.elevator}`;
+    txt = `View: -${state.zoom.elevator}..${state.zoom.elevator}`;
   } else {
-    txt = `X: ${-state.zoom.bothX}..+${state.zoom.bothX} | Y: ${-state.zoom.bothY}..+${state.zoom.bothY}`;
+    txt = `X: -${state.zoom.bothX}..${state.zoom.bothX} | Y: -${state.zoom.bothY}..${state.zoom.bothY}`;
   }
   document.getElementById('rangeText').textContent = txt;
 
@@ -730,7 +732,7 @@ function updatePanelText(){
     if (!pm.active) {
       psEl.textContent = 'Press the button to hide Pegamole!';
     } else if (pm.found) {
-      psEl.textContent = `🎉 Found Pegamole at (${fp(pm.x)}, ${fp(pm.y)}) in ${pm.totalMoves} moves!`;
+      psEl.textContent = `🎉 Found Pegamole at (${axl(pm.x)}, ${axl(pm.y)}) in ${pm.totalMoves} moves!`;
     } else {
       // Hint: how far away
       const dx = pm.x - w;
@@ -782,7 +784,7 @@ function drawStreetWorld(cx, roadY, unit, range, showLabels){
     for (let i = -range; i <= range; i++){
       if (i === 0) continue;
       ctx.fillStyle = i > 0 ? C.pos : C.neg;
-      ctx.fillText(fp(i), cx + i * unit, roadY + roadH + 3);
+      ctx.fillText(axl(i), cx + i * unit, roadY + roadH + 3);
     }
   }
 }
@@ -805,7 +807,7 @@ function drawElevatorWorld(cx, cy, unit, range, showLabels){
       ctx.fillStyle = i > 0 ? C.pos : C.neg;
       ctx.font = `bold ${Math.max(12, unit*0.38)}px Fredoka`;
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText(fp(i), shaftX + unit + 5, fy + unit/2);
+      ctx.fillText(axl(i), shaftX + unit + 5, fy + unit/2);
     }
   }
   const topY = cy - range * unit - unit / 2;
@@ -1249,7 +1251,7 @@ function draw(){
         ctx.fillStyle = '#FFD700';
         ctx.font = `bold ${Math.max(10, unit*0.3)}px Fredoka`;
         ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-        ctx.fillText(`(${fp(quiz.pegamoleAnswerX)}, ${fp(quiz.pegamoleAnswerY)})`, pmX + unit*0.3, pmY - unit*0.25);
+        ctx.fillText(`(${axl(quiz.pegamoleAnswerX)}, ${axl(quiz.pegamoleAnswerY)})`, pmX + unit*0.3, pmY - unit*0.25);
       }
 
       if (state.walker.pos !== 0 || state.ellie.pos !== 0){
@@ -1271,7 +1273,7 @@ function draw(){
           ctx.fillStyle = '#fff';
           ctx.font = `bold ${Math.max(10, unit*0.27)}px Fredoka`;
           ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-          ctx.fillText(`(${fp(state.walker.pos)}, ${fp(state.ellie.pos)})`, wx + unit*0.18, ey - unit*0.1);
+          ctx.fillText(`(${axl(state.walker.pos)}, ${axl(state.ellie.pos)})`, wx + unit*0.18, ey - unit*0.1);
         }
       }
 
@@ -1320,10 +1322,10 @@ const quizTopics = [
       const fwd = Math.random()>0.5;
       const answer = fwd ? start + steps : start - steps;
       const dir = fwd ? 'forward' : 'backward';
-      const fromText = start === 0 ? 'home (0)' : fp(start);
+      const fromText = start === 0 ? 'home (0)' : axl(start);
       return {
         prompt:`Walker is at ${fromText} and walks ${steps} step${steps!==1?'s':''} ${dir}. Where is he?`,
-        answer, choices:makeChoices(answer), hint:`Forward = positive (+), backward = negative (−). Start at ${fp(start)} and count ${steps} ${dir}.`,
+        answer, choices:makeChoices(answer), hint:`Forward = positive (+), backward = negative (−). Start at ${axl(start)} and count ${steps} ${dir}.`,
         viz:'street',
         vizStart:{walker:start, ellie:0},
         vizEnd:{walker:answer}
@@ -1340,7 +1342,7 @@ const quizTopics = [
       const answer = backward ? start - steps : start + steps;
       const dir = backward ? 'backward' : 'forward';
       return {
-        prompt:`Walker is at ${fp(start)}. He walks ${steps} steps ${dir}. Where does he end up?`,
+        prompt:`Walker is at ${axl(start)}. He walks ${steps} steps ${dir}. Where does he end up?`,
         answer, choices:makeChoices(answer), hint:`He passes right through home (0) and keeps going!`,
         viz:'street',
         vizStart:{walker:start, ellie:0},
@@ -1382,9 +1384,9 @@ const quizTopics = [
       const answer = winnerName;
 
       return {
-        prompt:`${char1} is at ${fp(a)}. ${char2} is at ${fp(b)}. Who's further from home?`,
+        prompt:`${char1} is at ${axl(a)}. ${char2} is at ${axl(b)}. Who's further from home?`,
         answer, choices:shuffle([char1, char2]), choicesAreStrings:true,
-        hint:`Ignore the + or −. Count how many steps from zero. ${fp(a)} is ${aAbs} away, ${fp(b)} is ${bAbs} away.`,
+        hint:`Ignore the + or −. Count how many steps from zero. ${axl(a)} is ${aAbs} away, ${axl(b)} is ${bAbs} away.`,
         viz,
         vizStart,
         vizEnd,
@@ -1399,11 +1401,18 @@ const quizTopics = [
       const a = ri(-8,8);
       let b; do { b = ri(-8,8); } while(b===a);
       const answer = Math.abs(a-b);
-      const uniq = [...new Set(makeChoices(answer).map(c=>Math.abs(c)||1))];
-      while(uniq.length<4) uniq.push(answer + uniq.length);
+      // Generate plausible wrong answers: nearby positive integers
+      const choices = new Set([answer]);
+      // Common mistakes: just adding, just subtracting, off by one
+      [Math.abs(a) + Math.abs(b), Math.abs(Math.abs(a) - Math.abs(b)), answer + 1, answer - 1, answer + 2].forEach(c => {
+        if(c > 0 && c !== answer) choices.add(c);
+      });
+      // Fill to 4 if needed
+      let fill = 1;
+      while(choices.size < 4){ choices.add(answer + fill + 1); fill++; }
       return {
-        prompt:`Walker is at ${fp(a)}. Pegamole is at ${fp(b)}. How many steps between them?`,
-        answer, choices:shuffle(uniq.slice(0,4)),
+        prompt:`Walker is at ${axl(a)}. Pegamole is at ${axl(b)}. How many steps between them?`,
+        answer, choices:shuffle([...choices].slice(0,4)),
         hint:`Count the steps from one to the other — direction doesn't matter for distance.`,
         viz:'street',
         vizStart:{walker:a, ellie:0, pegamoleX:b},
@@ -1422,7 +1431,7 @@ const quizTopics = [
       const answer = start + ride;
       const dir = ride > 0 ? 'up' : 'down';
       return {
-        prompt:`Ellie is on floor ${fp(start)}. She rides ${dir} ${Math.abs(ride)} floor${Math.abs(ride)!==1?'s':''}. What floor is she on now?`,
+        prompt:`Ellie is on floor ${axl(start)}. She rides ${dir} ${Math.abs(ride)} floor${Math.abs(ride)!==1?'s':''}. What floor is she on now?`,
         answer, choices:makeChoices(answer), hint:`Up = add, down = subtract.`,
         viz:'elevator',
         vizStart:{walker:0, ellie:start},
@@ -1437,15 +1446,15 @@ const quizTopics = [
       const x = riNZ(-8,8), y = riNZ(-8,8);
       const xDir = x > 0 ? 'forward' : 'backward';
       const yDir = y > 0 ? 'up' : 'down';
-      const answer = `(${fp(x)}, ${fp(y)})`;
-      const wrong1 = `(${fp(y)}, ${fp(x)})`;
-      const wrong2 = `(${fp(-x)}, ${fp(y)})`;
-      const wrong3 = `(${fp(x)}, ${fp(-y)})`;
+      const answer = `(${axl(x)}, ${axl(y)})`;
+      const wrong1 = `(${axl(y)}, ${axl(x)})`;
+      const wrong2 = `(${axl(-x)}, ${axl(y)})`;
+      const wrong3 = `(${axl(x)}, ${axl(-y)})`;
       return {
         prompt:`Walker walks ${Math.abs(x)} step${Math.abs(x)!==1?'s':''} ${xDir}. Ellie rides ${Math.abs(y)} floor${Math.abs(y)!==1?'s':''} ${yDir}. Where is Pegamole?`,
         answer, choices:shuffle([...new Set([answer, wrong1, wrong2, wrong3])]).slice(0,4),
         choicesAreStrings:true,
-        hint:`Forward = +, backward = −. Up = +, down = −. The point is (${fp(x)}, ${fp(y)}).`,
+        hint:`Forward = +, backward = −. Up = +, down = −. The point is (${axl(x)}, ${axl(y)}).`,
         viz:'both',
         vizStart:{walker:0, ellie:0},
         vizEnd:{walker:x, ellie:y},
@@ -1469,7 +1478,7 @@ const quizTopics = [
         'below ground, left of home'
       ]);
       return {
-        prompt:`Pegamole is at (${fp(x)}, ${fp(y)}). Is he above or below ground? Left or right of home?`,
+        prompt:`Pegamole is at (${axl(x)}, ${axl(y)}). Is he above or below ground? Left or right of home?`,
         answer, choices, choicesAreStrings:true,
         hint:`Positive y = above ground. Positive x = right of home.`,
         viz:'both',
@@ -1488,17 +1497,17 @@ const quizTopics = [
       const flipY = Math.random()>0.5;
       let answer, prompt;
       if(flipY){
-        answer = `(${fp(x)}, ${fp(-y)})`;
+        answer = `(${axl(x)}, ${axl(-y)})`;
         const context = y > 0 ? 'burrowing underground to the same depth' : 'flying up to the same height';
-        prompt = `Pegamole is at (${fp(x)}, ${fp(y)}). He ${context}. What are his new coordinates?`;
+        prompt = `Pegamole is at (${axl(x)}, ${axl(y)}). He ${context}. What are his new coordinates?`;
       } else {
-        answer = `(${fp(-x)}, ${fp(y)})`;
+        answer = `(${axl(-x)}, ${axl(y)})`;
         const context = x > 0 ? 'to the same distance left of home' : 'to the same distance right of home';
-        prompt = `Pegamole is at (${fp(x)}, ${fp(y)}). He moves ${context}. New coordinates?`;
+        prompt = `Pegamole is at (${axl(x)}, ${axl(y)}). He moves ${context}. New coordinates?`;
       }
-      const wrong1 = `(${fp(-x)}, ${fp(-y)})`;
-      const wrong2 = `(${fp(x)}, ${fp(y)})`;
-      const wrong3 = flipY ? `(${fp(-x)}, ${fp(y)})` : `(${fp(x)}, ${fp(-y)})`;
+      const wrong1 = `(${axl(-x)}, ${axl(-y)})`;
+      const wrong2 = `(${axl(x)}, ${axl(y)})`;
+      const wrong3 = flipY ? `(${axl(-x)}, ${axl(y)})` : `(${axl(x)}, ${axl(-y)})`;
       return {
         prompt, answer, choices:shuffle([...new Set([answer,wrong1,wrong2,wrong3])]).slice(0,4),
         choicesAreStrings:true,
@@ -1517,12 +1526,12 @@ const quizTopics = [
       const pos = riNZ(-9,9);
       const answer = Math.abs(pos);
       const who = Math.random()>0.5 ? 'Walker' : 'Ellie';
-      const where = who === 'Walker' ? `at position ${fp(pos)}` : `on floor ${fp(pos)}`;
+      const where = who === 'Walker' ? `at position ${axl(pos)}` : `on floor ${axl(pos)}`;
       const isW = who==='Walker';
       return {
         prompt:`${who} is ${where}. How many steps to get home?`,
         answer, choices:makeChoices(answer).map(c=>Math.abs(c)||1),
-        hint:`Count the steps from ${fp(pos)} back to 0. Direction doesn't matter — just the distance.`,
+        hint:`Count the steps from ${axl(pos)} back to 0. Direction doesn't matter — just the distance.`,
         viz: isW?'street':'elevator',
         vizStart: isW?{walker:pos, ellie:0}:{walker:0, ellie:pos},
         vizEnd: isW?{walker:0}:{ellie:0}
@@ -1542,11 +1551,11 @@ const quizTopics = [
         if(isW) return n>0 ? `${n} steps forward` : `${-n} steps backward`;
         return n>0 ? `${n} floors up` : `${-n} floors down`;
       }
-      const fromText = start === 0 ? 'home (0)' : fp(start);
+      const fromText = start === 0 ? 'home (0)' : axl(start);
       return {
         prompt:`${who} starts at ${fromText}. Goes ${desc(m1)}, then ${desc(m2)}, then ${desc(m3)}. Where does ${isW?'he':'she'} end up?`,
         answer, choices:makeChoices(answer),
-        hint:`Step by step: ${fp(start)} ${m1>=0?'+ '+m1:'− '+(-m1)} ${m2>=0?'+ '+m2:'− '+(-m2)} ${m3>=0?'+ '+m3:'− '+(-m3)} = ${fp(answer)}`,
+        hint:`Step by step: ${axl(start)} ${m1>=0?'+ '+m1:'− '+(-m1)} ${m2>=0?'+ '+m2:'− '+(-m2)} ${m3>=0?'+ '+m3:'− '+(-m3)} = ${axl(answer)}`,
         viz: isW?'street':'elevator',
         vizStart: isW?{walker:start, ellie:0}:{walker:0, ellie:start},
         vizEnd: isW?{walker:answer}:{ellie:answer},
@@ -1641,7 +1650,7 @@ function quizNext(){
 
   const isStr = q.choicesAreStrings;
   const choicesHTML = q.choices.map((c, i) => {
-    const label = isStr ? c : fp(c);
+    const label = isStr ? c : axl(c);
     return `<button class="quiz-choice" onclick="quizAnswer(this, ${isStr ? `'${c.replace(/'/g,"\\'")}'` : c})">${label}</button>`;
   }).join('');
   document.getElementById('quizChoices').innerHTML = choicesHTML;
@@ -1683,7 +1692,7 @@ function quizAnswer(btn, value){
   btns.forEach(b => {
     b.disabled = true;
     const bVal = b.textContent;
-    const aLabel = isStr ? q.answer : fp(q.answer);
+    const aLabel = isStr ? q.answer : axl(q.answer);
     if(bVal === aLabel) b.classList.add('correct');
   });
   if(!correct) btn.classList.add('wrong');
@@ -1699,7 +1708,7 @@ function quizAnswer(btn, value){
       fb.textContent = '✓ Correct!';
     } else {
       fb.className = 'quiz-feedback wrong';
-      const aLabel = isStr ? q.answer : fp(q.answer);
+      const aLabel = isStr ? q.answer : axl(q.answer);
       fb.innerHTML = `✗ The answer is <strong>${aLabel}</strong>. ${q.hint}`;
     }
   }
